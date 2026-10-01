@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-EXE = Path(os.environ.get("MESTER_EXE") or Path(os.environ.get("CARGO_TARGET_DIR", "C:/Users/mannin/AppData/Local/mester-render-target")) / "debug" / "level-viewer.exe")
+EXE = Path(os.environ.get("MESTER_EXE") or Path(os.environ.get("CARGO_TARGET_DIR", "C:/Temp/mester-render-target")) / "debug" / "level-viewer.exe")
 
 
 def ground_points(world: str, output: Path):

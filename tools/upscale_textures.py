@@ -32,7 +32,7 @@ from PIL import Image
 MODEL = 'realesrgan-x4plus'
 PAD = 16                      # source pixels of wrap / edge padding around every image
 RECIPE = 'x4plus-v1'          # part of the pool hash: bump to force a redo
-DEFAULT_EXE = Path(os.environ.get('LOCALAPPDATA', 'C:/Users/mannin/AppData/Local')) / 'Mesterlovesz2026/tools/realesrgan/realesrgan-ncnn-vulkan.exe'
+DEFAULT_EXE = Path(os.environ.get('LOCALAPPDATA', 'C:/Temp')) / 'Mesterlovesz2026/tools/realesrgan/realesrgan-ncnn-vulkan.exe'
 FIRST = ['rh3-miasteczko0', 'rh1-wiezienie2', 'knajpa', 'RH9-fabryka']   # the levels checked first, then skins, then the rest
 BATCH = 40
 IDLE_PRIORITY, NO_WINDOW = 0x40, 0x08000000

@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXE = Path(os.environ.get("LEVEL_VIEWER_EXE", "C:/Users/mannin/AppData/Local/mester-fix-target/debug/level-viewer.exe"))
+EXE = Path(os.environ.get("LEVEL_VIEWER_EXE", "C:/Temp/mester-fix-target/debug/level-viewer.exe"))
 SHOTS = ROOT / "docs" / "cut-content-media" / "shots"
 
 
