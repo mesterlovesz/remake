@@ -87,5 +87,3 @@ A statikus weboldal és a Kiskína médiaarchívuma [külön tárolóban](https:
 ## Megjegyzés
 
 Nem hivatalos rajongói projekt. Az eredeti játék és gyári anyagai a jogtulajdonosoké.
-
-Ezt az egész projektet egy LLM írta. Mindent [mannin1337](https://www.mannin.hu/) promptolt, emberi kód nincs a projektben.
