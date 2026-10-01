@@ -16,7 +16,7 @@ skins in the report). Chinatown, Tunele, fabryka, wiezowiec*, lab*, wn* ... had 
 `model_glowa` character (cigarettes and ties of the Italian soldiers, the China officers' heads, ...).
 
 ## What the woman looks like now (headless captures, `MESTER_SPAWN` in front of her)
-`C:/Users/mannin/AppData/Local/mester-assets-shots/`: `d2.png` (head with the seeded pre-fix binary and the fixed data: only the export was
+`C:/Temp/mester-assets-shots/`: `d2.png` (head with the seeded pre-fix binary and the fixed data: only the export was
 missing), `e2.png` and `e2_crop.png` (final build, 2.6x brighter crop): long blonde hair, face, lace gloves, the raised hand and a thin
 smoke streak rising from the fingers. Head orientation/position are those of the other head characters (burmistrz, barman): the
 `glowa` socket transform of the body, so no floating or rotated head; the display mirror (`mirror.rs`) flips the whole image like

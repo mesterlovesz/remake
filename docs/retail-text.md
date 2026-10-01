@@ -2,7 +2,7 @@
 
 Fonts, colours, positions and Hungarian wording stay the retail ones; only readability was changed. Code: `crates/level-viewer/src/retail_ui.rs`
 (`Aid`, `TextAid`, `crisp_atlas`, `draw_text`), `dialogue.rs`, `opening.rs` (`subtitle_fit`), `panels.rs` (message), `hud.rs` (help line).
-Screenshots (headless, `MESTER_SILENT=1`, `MESTER_WINDOW=WxH`): `C:/Users/mannin/AppData/Local/mester-text-shots/{before,after}/` (before = main 57beb98, after = this branch);
+Screenshots (headless, `MESTER_SILENT=1`, `MESTER_WINDOW=WxH`): `C:/Temp/mester-text-shots/{before,after}/` (before = main 57beb98, after = this branch);
 `off/` = same scene with `MESTER_TEXT_AID=0`.
 
 ## Findings (before)

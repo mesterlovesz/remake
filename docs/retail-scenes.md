@@ -27,7 +27,7 @@ rh1-wiezienie1, then `intro zwei`, then rh1-wiezienie2), `ucieczka z 2 wiezienia
 export lacks (animations `zapala`/`jedzie` of the empty bus, `do_broni`/`strzela`/`reload`/`pada` of don Mario, three policjant clips): the retail
 `SetCurAnim` keeps the previous clip when a name is missing, the remake does the same.
 
-Checked headless (screenshots in `C:/Users/mannin/AppData/Local/mester-scenes-scratch/`): `intro-006.00.png` (car, subtitle "A munka elvégezve.", bars),
+Checked headless (screenshots in `C:/Temp/mester-scenes-scratch/`): `intro-006.00.png` (car, subtitle "A munka elvégezve.", bars),
 `intro-054.00.png` (arrest street, two policemen with guns), `outro-020.00.png` (Dominick with the pistol), `outro-070.00.png` (Stella with the syringe,
 subtitle "Nézd mit találtam a lenti laborban."), `bus-003.00.png` / `bus-009.00.png` (bus in the courtyard, gate `brama1` opening).
 
@@ -127,7 +127,7 @@ item grid compared before the exit and after arrival, "carry ok"); after the mer
 Other flows proven headlessly: death -> F9 (`MESTER_WALK_DEATH=1` with a scratch `MESTER_USER_DIR`: dead, F9 reloads rh1-wiezienie2, health 100, alive), carry-over of items across
 the 27 real exits (chain run), cutscenes: intro (73 s unskipped), bus, outro (in the chain), credits scroll and the return to the main menu.
 
-Commands (Git Bash, worktree crates/level-viewer, `CARGO_TARGET_DIR=C:/Users/mannin/AppData/Local/mester-scenes-target`, `cargo build --release -j 4`):
+Commands (Git Bash, worktree crates/level-viewer, `CARGO_TARGET_DIR=C:/Temp/mester-scenes-target`, `cargo build --release -j 4`):
 
 ```
 # one level (rh1-wiezienie1 is started as `story`), hidden window, silent, ~10x real time

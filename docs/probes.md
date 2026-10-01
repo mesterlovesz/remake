@@ -7,7 +7,7 @@ finished). `tools/run_probes.py` runs all of them and prints PASS/FAIL per scena
 
 ```
 export CARGO_HOME="F:/_VIBECODING/RUST/_toolchain/cargo" RUSTUP_HOME="F:/_VIBECODING/RUST/_toolchain/rustup"; export PATH="/f/_VIBECODING/RUST/_toolchain/cargo/bin:$PATH"
-export CARGO_TARGET_DIR=C:/Users/mannin/AppData/Local/mester-probes-fast      # any dir; the optimized build lives there
+export CARGO_TARGET_DIR=C:/Temp/mester-probes-fast      # any dir; the optimized build lives there
 python -m tools.run_probes --build          # first build of a fresh target dir ~25 min (Bevy at opt-level 2), later ~2 min
 python -m tools.run_probes                  # all 36 scenarios, ~5 min in total
 python -m tools.run_probes retail bus       # some (labels below)   |   --list prints the exact command lines   |   --logs DIR
