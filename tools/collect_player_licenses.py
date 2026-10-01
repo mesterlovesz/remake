@@ -45,7 +45,7 @@ def main():
     (args.out / 'dependencies.json').write_text(source_index, encoding='utf-8')
     (args.out / 'SOURCES.txt').write_text(
         'Unchanged published Cargo source archives and license/readme notices for this release.\n'
-        'Sources: https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Rust-dependency-sources.zip\n'
+        'Sources: https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.2/Rust-dependency-sources.zip\n'
         'The catalog includes all resolved platforms, including dependencies not used by the Windows binary.\n', encoding='utf-8')
     print(f'{len(catalog)} dependency archives collected: {args.sources}')
 

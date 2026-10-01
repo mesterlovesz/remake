@@ -45,7 +45,7 @@ pub struct Probe {
     levels:Vec<String>,at:usize,stage:Stage,clock:f32,level_clock:f32,budget:f32,frames:u32,arrived:u64,
     data:Data,goals:VecDeque<Goal>,goal_clock:f32,attempts:u32,goal_label:String,route:Vec<Waypoint>,route_goal:Option<Vec3>,route_i:usize,route_reached:bool,route_progress:(usize,f32),
     watch:(Vec3,f32),stuck:u32,teleports:Vec<String>,notes:Vec<String>,results:Vec<String>,taps:Vec<(KeyCode,f32)>,replans:u32,walked:f32,last_pos:Option<Vec3>,
-    carry:Option<(Vec<String>,String)>,last_frame:Option<std::time::Instant>,fps_frames:u32,damage:f32,npc_moved:f32,npc_noticed:usize,npc_last:Vec<Vec3>,hitches:u32,gaps:u32,worst:f32,credits_seen:bool,ending:u8,ending_clock:f32,ending_arrived:u64,door_tap:BTreeMap<String,f32>,vantage:Option<Vec3>,
+    carry:Option<(Vec<String>,String)>,last_frame:Option<std::time::Instant>,fps_frames:u32,damage:f32,npc_moved:f32,npc_noticed:usize,npc_last:Vec<Vec3>,hitches:u32,gaps:u32,worst:f32,credits_seen:bool,ending:u8,ending_clock:f32,ending_arrived:u64,door_tap:BTreeMap<String,f32>,vantage:Option<Vec3>,after_tele:u32,rush_until:f32,trail:Vec<Vec3>,failed_spots:Vec<Vec3>,
 }
 
 pub fn setup(mut commands:Commands,config:Res<ViewerConfig>) {
@@ -183,6 +183,8 @@ impl Probe {
         }
         let (waypoint,crouch,_)=self.route[self.route_i];
         let here=flat(p,waypoint);
+        if self.after_tele>0 {self.after_tele-=1;if std::env::var_os("MESTER_WALK_TRACE").is_some() {info!("WALK after teleport: pos {} waypoint {} grounded {}",fmt(p),fmt(waypoint),c.walking.player.grounded);}}
+        if std::env::var_os("MESTER_WALK_TRACE").is_some() && (self.level_clock*4.0) as u32!=((self.level_clock-dt)*4.0) as u32 {info!("WALK trace pos {} waypoint {} i {}/{} stuck {} crouch {} half {:?}",fmt(p),fmt(waypoint),self.route_i,self.route.len(),self.stuck,crouch,c.walking.player.half_size());}
         c.face_heading(waypoint);c.keys.press(KeyCode::KeyW);c.keys.press(KeyCode::ShiftLeft);
         let want_crouch=crouch || self.route.get(self.route_i+1).is_some_and(|n|n.1 && here<48.0);
         if want_crouch {c.keys.press(KeyCode::ControlLeft);}else {c.keys.release(KeyCode::ControlLeft);}
@@ -215,7 +217,7 @@ impl Probe {
         if self.route_progress.0!=self.route_i {self.route_progress=(self.route_i,self.level_clock);}
         else if self.level_clock-self.route_progress.1>8.0 && c.campaign.dialogue.is_none() {
             self.route_progress.1=self.level_clock;self.teleports.push(format!("stalled {}->{}",fmt(p),fmt(waypoint)));
-            crate::campaign_probe::place(&mut c.walking,waypoint,waypoint+Vec3::Z*100.0);self.route_i=(self.route_i+1).min(last);
+            crate::campaign_probe::place(&mut c.walking,waypoint,waypoint+Vec3::Z*100.0);self.route_i=(self.route_i+1).min(last);self.after_tele=10;if std::env::var_os("MESTER_WALK_TRACE").is_some() {info!("WALK placed at {} (asked {})",fmt(c.position()),fmt(waypoint));}
         }
         // Stuck: jump, then try the nearest closed door ahead, then step the player to the waypoint (logged).
         self.watch.1+=dt;
@@ -234,8 +236,10 @@ impl Probe {
                 let mut blockers:Vec<String>=c.leaves.iter().filter(|d|d.sweep(p,half,ahead).is_some()).map(|d|d.name.clone()).collect();
                 {let field=c.props.field();blockers.extend(field.props.iter().filter(|x|x.solid && !x.dead && crate::props::sweep_box(p,half,ahead,x.center,x.half).is_some()).map(|x|x.name.clone()));}
                 if c.walking.world.sweep_box(retail_movement::Vec3::new(p.x,p.y,p.z),retail_movement::Vec3::new(half.x,half.y,half.z),retail_movement::Vec3::new(ahead.x,ahead.y,ahead.z),0.0).is_some() {blockers.push("hull".into());}
+                if std::env::var_os("MESTER_WALK_TRACE").is_some() {{let h=c.walking.player.half_size();let pp=c.walking.player.position;let dir=(waypoint-p).with_y(0.0).normalize_or_zero();let mut out=Vec::new();for (label,dy) in [("level",0.0f32),("up 10",10.0),("up 22",22.0),("up 40",40.0)] {let d=retail_movement::Vec3::new(dir.x*30.0,0.0,dir.z*30.0);out.push(format!("{label}: {:?}",c.walking.world.sweep_box(retail_movement::Vec3::new(pp.x,pp.y+dy,pp.z),h,d,0.0)));}info!("WALK stuck sweeps toward the waypoint from {} half {:?}: {out:?} penetration {:?}",fmt(p),h,c.walking.world.penetration(pp,h));}
+let o=retail_movement::Vec3::new(waypoint.x,waypoint.y+18.0,waypoint.z);let ray=c.walking.world.raycast(o,retail_movement::Vec3::NEG_Y,300.0);info!("WALK stuck ray down from {}: {:?}; overlaps at waypoint y: 25-box {} 16-box {}",fmt(Vec3::new(o.x,o.y,o.z)),ray,c.walking.world.box_overlaps(retail_movement::Vec3::new(waypoint.x,waypoint.y,waypoint.z),retail_movement::Vec3::new(25.0,58.0,25.0)),c.walking.world.box_overlaps(retail_movement::Vec3::new(waypoint.x,waypoint.y,waypoint.z),retail_movement::Vec3::new(16.0,58.0,16.0)));let c0=retail_movement::Vec3::new(waypoint.x,waypoint.y+58.2,waypoint.z);let over=c.walking.world.box_overlaps(c0,retail_movement::Vec3::new(25.0,58.0,25.0));let props:Vec<String>=c.props.field().props.iter().filter(|x|!x.dead && (x.center-waypoint).abs().cmplt(x.half+Vec3::new(30.0,60.0,30.0)).all()).map(|x|format!("{} solid {} c {} h {}",x.name,x.solid,fmt(x.center),fmt(x.half))).collect();let leaves:Vec<String>=c.leaves.iter().filter(|d|{let (lo,hi)=d.bounds();(waypoint.clamp(lo,hi)-waypoint).length()<120.0 || (p.clamp(lo,hi)-p).length()<120.0}).map(|d|format!("{} blocks {} {:?}",d.name,d.blocks(),d.state())).collect();let actors:Vec<String>=c.roster.actors.iter().filter(|x|x.position.distance(p)<300.0).map(|x|format!("{} alive {} at {} half {} phase {}",x.name,x.alive(),fmt(x.position),fmt(x.half_extents),x.phase)).collect();info!("WALK stuck detail: waypoint box overlaps static hull {over}; props {props:?}; leaves {leaves:?}; actors {actors:?}");}
                 self.teleports.push(format!("stuck {}->{} by {blockers:?}",fmt(p),fmt(waypoint)));
-                crate::campaign_probe::place(&mut c.walking,waypoint,waypoint+Vec3::Z*100.0);self.route_i=(self.route_i+1).min(last);
+                crate::campaign_probe::place(&mut c.walking,waypoint,waypoint+Vec3::Z*100.0);self.route_i=(self.route_i+1).min(last);self.after_tele=10;if std::env::var_os("MESTER_WALK_TRACE").is_some() {info!("WALK placed at {} (asked {})",fmt(c.position()),fmt(waypoint));}
             }
         }
         false
@@ -321,30 +325,58 @@ impl Probe {
                 let key=|c:&Ctx|c.campaign.items.entries.iter().find(|e|e.item.eq_ignore_ascii_case(gun) && e.row>=crate::inventory::HOLSTER_ROW && e.row<crate::inventory::BELT_ROW).map(|e|(e.column+crate::inventory::COLUMNS*(e.row-crate::inventory::HOLSTER_ROW)) as usize);
                 if key(c).is_none() {c.campaign.items.add(gun,1,true);self.notes.push(format!("{gun} was not in the holsters: added it for the shot"));}
                 c.controls.native_slot=key(c);
-                let eye=c.position()+Vec3::Y*40.0;
+                if self.trail.last().is_none_or(|l|l.distance(actor.1)>40.0) && (self.level_clock*2.0) as u32!=((self.level_clock-dt)*2.0) as u32 {self.trail.push(actor.1);if self.trail.len()>160 {self.trail.remove(0);}}
+                let eye=c.camera.translation/crate::SCALE;
                 let in_sight=crate::npcs::line_of_sight(&c.walking.world,eye,actor.1);
                 // No line: walk to the nearest reachable spot that has one.
                 if !in_sight && self.vantage.is_none() && self.attempts==0 {
                     self.attempts=1;
-                    match vantage(&c.walking.world,c.position(),actor.1,&self.data.portals) {
+                    match vantage(&c.walking.world,c.position(),actor.1,&self.trail,&self.failed_spots,&self.data.portals) {
                         Some(spot)=>{self.notes.push(format!("{id} is not in sight from {}: shooting from {}",fmt(c.position()),fmt(spot)));self.vantage=Some(spot);},
                         None=>return Step::Failed(format!("no walkable spot with a line to {id}")),
                     }
                 }
                 if !in_sight {
-                    if let Some(spot)=self.vantage {if !self.go(c,spot,30.0,dt) {self.goal_clock=0.0;return Step::Working;}}
+                    if let Some(spot)=self.vantage {
+                        if !self.go(c,spot,20.0,dt) {self.goal_clock=0.0;return Step::Working;}
+                        // Arrived and no hull line: shoot anyway (the hull test counts glass and fences as walls that bullets pass), but when the target is still alive
+                        // after 15 s it walked on (patrols) since the spot was chosen: choose a spot again from here, now knowing where it was (the trail), up to three times.
+                        if self.attempts<4 && self.goal_clock>15.0 {
+                            self.attempts+=1;self.failed_spots.push(c.position());
+                            if let Some(next)=vantage(&c.walking.world,c.position(),actor.1,&self.trail,&self.failed_spots,&self.data.portals) {self.notes.push(format!("{id} moved: shooting from {} instead",fmt(next)));self.vantage=Some(next);self.goal_clock=0.0;return Step::Working;}
+                        }
+                    }
                     self.release_walk(c);
                     if self.goal_clock>60.0 {return Step::Failed(format!("{id} is out of sight"));}
                     if self.vantage.is_none() {return Step::Working;}
                 }
                 self.release_walk(c);c.look_at(actor.1);
                 if self.goal_clock>1.0 && (self.goal_clock*2.0) as u32!=((self.goal_clock-dt)*2.0) as u32 {c.controls.fire=true;c.controls.held=true;}
-                if self.goal_clock>40.0 {Step::Failed(format!("{id} survived 40 s of shooting"))}else{Step::Working}
+                if self.goal_clock>40.0 {self.failed_spots.push(c.position());let blocked=bullet_blocker(c,c.camera.translation/crate::SCALE,actor.1,id);Step::Failed(format!("{id} survived 40 s of shooting (first thing on the bullet line: {blocked:?}, player {} camera {} target eye {} position {} alive {})",fmt(c.position()),fmt(c.camera.translation/crate::SCALE),fmt(actor.1),fmt(actor.0),actor.2))}else{Step::Working}
             },
             Goal::Door(name,destination)=>{
                 let Some(leaf)=c.leaves.iter().find(|d|&d.name==name).map(|d|d.center()) else {return Step::Failed(format!("door {name} has no leaf"))};
                 if !self.go(c,leaf,105.0,dt) {self.goal_clock=0.0;return Step::Working;}
-                self.release_walk(c);c.look_at(leaf);c.doors.request_name=Some(name.clone());
+                self.release_walk(c);c.look_at(leaf);
+                // The use ray meets the nearest leaf first: a closed gate in front of the door (wiez_wn1's last drawer gate closes again behind the player) takes the key press instead.
+                let (cam,fwd)=(c.camera.translation/crate::SCALE,*c.camera.forward());
+                let mine=c.leaves.iter().find(|d|&d.name==name).and_then(|d|d.debug_aim(cam,fwd).2);
+                let front:Option<(f32,String,bool)>=c.leaves.iter().filter(|o|&o.name!=name && o.blocks()).filter_map(|o|o.debug_aim(cam,fwd).2.map(|d|(d,o.name.clone(),o.player_opens()))).filter(|f|mine.is_none_or(|m|f.0<m)).min_by(|a,b|a.0.total_cmp(&b.0));
+                // The plain request by name works whenever the door answers; the leaf in front is only dealt with after 3 s without an answer (attempts: 1 = front mode).
+                if self.attempts==0 && self.goal_clock>3.0 {self.attempts=1;}
+                let request=match front.filter(|_|self.attempts==1 && self.level_clock>=self.rush_until) {
+                    Some((_,other,usable))=>{let opener=if usable {Some(other.clone())}else{self.opener_of(&other,c).or_else(||{let p=c.position();c.leaves.iter().filter(|d|d.player_opens() && d.blocks() && d.name!=*name).map(|d|(d.center().distance(p),d.name.clone())).filter(|x|x.0<300.0).min_by(|a,b|a.0.total_cmp(&b.0)).map(|x|x.1)})};let note=format!("{other} stands in front of {name}: E on {}",opener.as_deref().unwrap_or(&other));if !self.notes.contains(&note) {self.notes.push(note);}opener.unwrap_or(other)},
+                    None=>name.clone(),
+                };
+                // The blocking leaf's opener may stand further away (wiez_wn1: the first gate of the row): walk to it, aim at it, press there.
+                if request!=*name {
+                    let Some(at)=c.leaves.iter().find(|d|d.name==request).map(|d|d.center()) else {return Step::Failed(format!("opener {request} has no leaf"))};
+                    if !self.go(c,at,90.0,dt) {self.goal_clock=0.0;return Step::Working;}
+                    self.release_walk(c);c.look_at(at);
+                    // One press per 3 s (a held request toggles the gate again every time it settles); then 8 s of rushing through to the door before the gate row
+                    // closes behind the player (it closes when he is 128 units from the first gate, as in retail).
+                    if self.door_tap.get(&request).is_none_or(|t|self.level_clock-*t>3.0) {self.door_tap.insert(request.clone(),self.level_clock);self.rush_until=self.level_clock+8.0;c.doors.request_name=Some(request);}
+                } else {c.doors.request_name=Some(request);}
                 if (self.goal_clock*2.0) as u32!=((self.goal_clock-dt)*2.0) as u32 {let p=c.position();info!("WALK door {name}: player {} leaf {} distance {:.0} hint {:?} target {:?} camera {} forward {:?} yaw {:.2} pitch {:.2}",fmt(p),fmt(leaf),p.distance(leaf),c.doors.hint,c.doors.target_name,fmt(c.camera.translation/crate::SCALE),*c.camera.forward(),c.walking.yaw,c.walking.pitch);
                 if let Some(d)=c.leaves.iter().find(|d|&d.name==name) {info!("WALK door aim {:?}",d.debug_aim(c.camera.translation/crate::SCALE,*c.camera.forward()));for other in c.leaves.iter().filter(|o|&o.name!=name) {let aim=other.debug_aim(c.camera.translation/crate::SCALE,*c.camera.forward());if aim.2.is_some() {info!("WALK door aim also hits {} {:?}",other.name,aim);}}}}
                 if self.goal_clock>6.0 {let p=c.position();let near:Vec<String>=c.leaves.iter().filter(|d|d.center().distance(p)<400.0).map(|d|format!("{} open {:?} blocks {} usable {}",d.name,d.state(),d.blocks(),d.player_opens())).collect();Step::Failed(format!("door {name} to {destination} did not respond ({:?}); leaves near: {near:?}",c.doors.hint))}else{Step::Working}
@@ -357,18 +389,43 @@ impl Probe {
         }
     }
 }
+/// What takes a bullet fired along `eye`..`target` before it reaches the target: the static hull, a prop box, or another character (a corpse only with its
+/// lowest quarter, cshell 0x10006836) - the retail bullet filter (docs/retail-ai.md "Line-of-sight filters"). (distance, what, character name if any)
+fn bullet_blocker(c:&Ctx,eye:Vec3,target:Vec3,id:&str)->Option<(f32,String,Option<String>)> {
+    let delta=target-eye;let distance=delta.length();let Some(direction)=delta.try_normalize() else {return None};
+    let mut found:Vec<(f32,String,Option<String>)>=Vec::new();
+    if let Some((d,_))=c.walking.world.raycast(retail_movement::Vec3::new(eye.x,eye.y,eye.z),retail_movement::Vec3::new(direction.x,direction.y,direction.z),distance) {if d<distance-0.2 {found.push((d,"hull".into(),None));}}
+    if let Some((d,i,_))=c.props.field().ray(eye,direction,distance) {found.push((d,format!("prop {i}"),None));}
+    for a in c.roster.actors.iter().filter(|a|a.name!=id && a.shown()) {
+        let (center,half)=(a.body_center(),a.half_extents);
+        let Some(entry)=crate::npcs::segment_box_entry(eye,target,center,half) else {continue};
+        if !a.alive() && (eye+direction*entry).y>=center.y-half.y*0.5 {continue;}
+        found.push((entry,format!("{} {}",if !a.alive() {"corpse"}else{"character"},a.name),Some(a.name.clone())));
+    }
+    found.into_iter().filter(|f|f.0<distance-0.2).min_by(|a,b|a.0.total_cmp(&b.0))
+}
 /// Living solid props (boxes the player cannot walk through; the static hull does not know them).
 fn solid_props(c:&Ctx)->Vec<(Vec3,Vec3)> {c.props.field().props.iter().filter(|p|p.solid && !p.dead).map(|p|(p.center,p.half)).collect()}
 fn fmt(v:Vec3)->String {format!("({:.0},{:.0},{:.0})",v.x,v.y,v.z)}
 
-/// The reachable standing spot closest to `from` that has a clear line to `target` (a sniper's vantage point).
-fn vantage(world:&retail_movement::CollisionWorld,from:Vec3,target:Vec3,portals:&[(retail_movement::Vec3,retail_movement::Vec3)])->Option<Vec3> {
+/// The reachable standing spot with a clear line to `target` (a sniper's vantage point) that also sees the most of `trail`, the places the target has been (a patrolling
+/// target walks on while the bot walks to the spot); among equals the one closest to `from`.
+fn vantage(world:&retail_movement::CollisionWorld,from:Vec3,target:Vec3,trail:&[Vec3],failed:&[Vec3],portals:&[(retail_movement::Vec3,retail_movement::Vec3)])->Option<Vec3> {
     let native=|p:Vec3|retail_movement::Vec3::new(p.x,p.y,p.z);
     let mut cells=Vec::new();
     world.plan_walk(native(from),native(target),250000,portals,Some(&mut cells));
     let mut spots:Vec<Vec3>=cells.iter().map(|p|Vec3::new(p.x,p.y,p.z)).collect();
     spots.sort_by(|a,b|a.distance(from).total_cmp(&b.distance(from)));
-    spots.into_iter().find(|s|s.distance(target)<9000.0 && crate::npcs::line_of_sight(world,*s+Vec3::Y*40.0,target))
+    // The bot stops up to 20 units short of the spot and the camera moves with the stance: the line must hold from the spot and 20 units around it.
+    let sees=|s:Vec3,t:Vec3|[46.0,36.0,56.0].iter().all(|up|crate::npcs::line_of_sight(world,s+Vec3::Y*up,t)) && [Vec3::X,Vec3::NEG_X,Vec3::Z,Vec3::NEG_Z].iter().all(|d|crate::npcs::line_of_sight(world,s+*d*20.0+Vec3::Y*46.0,t));
+    let mut best:Option<(usize,Vec3)>=None;let mut candidates=0;
+    for s in spots.into_iter().filter(|s|s.distance(target)<9000.0 && failed.iter().all(|f|f.distance(*s)>150.0)) {
+        if !sees(s,target) {continue;}
+        let score=trail.iter().filter(|t|s.distance(**t)<9000.0 && crate::npcs::line_of_sight(world,s+Vec3::Y*46.0,**t)).count();
+        if best.is_none_or(|b|score>b.0) {best=Some((score,s));}
+        candidates+=1;if candidates>=400 {break;}
+    }
+    best.map(|b|b.1)
 }
 
 pub fn tick(mut p:ResMut<Probe>,mut c:Ctx) {
@@ -426,7 +483,7 @@ pub fn tick(mut p:ResMut<Probe>,mut c:Ctx) {
             if !ready {return;}
             let want=p.level().to_owned();
             if !c.config.world.eq_ignore_ascii_case(&want) {c.travel.pending=Some(want);p.frames=0;return;}
-            p.level_clock=0.0;p.hitches=0;p.worst=0.0;p.damage=0.0;p.npc_moved=0.0;p.npc_noticed=0;p.npc_last.clear();p.teleports.clear();p.notes.clear();p.walked=0.0;p.route.clear();p.route_goal=None;p.stuck=0;p.replans=0;p.last_pos=Some(c.position());p.watch=(c.position(),0.0);p.goal_label.clear();
+            p.level_clock=0.0;p.hitches=0;p.worst=0.0;p.damage=0.0;p.npc_moved=0.0;p.npc_noticed=0;p.npc_last.clear();p.teleports.clear();p.rush_until=0.0;p.failed_spots.clear();p.notes.clear();p.walked=0.0;p.route.clear();p.route_goal=None;p.stuck=0;p.replans=0;p.last_pos=Some(c.position());p.watch=(c.position(),0.0);p.goal_label.clear();
             p.carry=Some((c.campaign.items.names(),String::new()));
             match p.plan(&mut c) {
                 Ok(())=>{let labels:Vec<String>=p.goals.iter().map(Goal::label).collect();p.log(format!("start at {} health {:.0}: goals {labels:?}",fmt(c.position()),c.campaign.health));p.stage=Stage::Run;p.goal_clock=0.0;p.attempts=0;}
@@ -484,7 +541,7 @@ pub fn tick(mut p:ResMut<Probe>,mut c:Ctx) {
                 }
                 return;
             };
-            if p.goal_label!=goal.label() {p.goal_label=goal.label();p.goal_clock=0.0;p.attempts=0;p.gaps=0;p.vantage=None;p.route.clear();p.route_goal=None;p.log(format!("goal {} at {} (t={:.1})",p.goal_label,fmt(here),p.level_clock));
+            if p.goal_label!=goal.label() {p.goal_label=goal.label();p.goal_clock=0.0;p.attempts=0;p.gaps=0;p.vantage=None;p.trail.clear();p.route.clear();p.route_goal=None;p.log(format!("goal {} at {} (t={:.1})",p.goal_label,fmt(here),p.level_clock));
                 if matches!(goal,Goal::Door(..)) {p.carry=Some((c.campaign.items.names(),String::new()));}}
             match p.goal_step(&mut c,&goal,dt) {
                 Step::Working=>{},

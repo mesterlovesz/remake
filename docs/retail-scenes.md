@@ -86,48 +86,51 @@ Three layers, all headless and silent:
    world, `MESTER_WALK_LEVELS=a,b`, `MESTER_WALK_BUDGET=s`. Log line per level: `WALK n level: PASS ... / BLOCKED ...` and a summary. `MESTER_WALK_DEATH=1` runs the
    F5 / death / F9 flow.
 
-### Status per level (release build, final proof run 2026-09-30)
+### Status per level (regression proof 2026-10-01 on main 4753a3a + the bot fixes below; dev-optimized build)
 
 PASS = the level's real exit fired (door, script `startlevel`, cutscene) and the next expected level loaded. Times are GAME seconds (a scenario frame is a fixed 0.05 s,
-`probe_kit.rs`; with `MESTER_NOVSYNC=1` the hidden window runs about 10x real time, a whole level takes 1-40 s of wall time). "tele" = logged bot teleports
-(stuck steps on slopes/stairs, unusable grates, unconnected regions), "dmg" = health the AI took from the invulnerable bot (proves NPCs attack).
-Every level was run alone from its own start (`walk21`) and the whole campaign once in ONE process from rh3-miasteczko0 to the credits (`chain4`, 27/27 PASS, real exits,
-item grid compared before the exit and after arrival, "carry ok"); after the merge of main 92eaa9d eight levels were re-run (all PASS, 0 panics, 0 NaN).
+`probe_kit.rs`; with `MESTER_NOVSYNC=1` the hidden window runs at roughly real time to 2x). "tele" = logged bot teleports (stuck steps on slopes/stairs, unusable grates, unconnected
+regions; owner decision: spots that need a crouch-jump may be teleported), "dmg" = health the AI took from the invulnerable bot (proves NPCs attack; 0 where the bot passes the
+guards before they see it). "prev" = the earlier proof (2026-09-30, before the AI/sight/door/script-order changes of main). Every level was run alone from its own start
+(`walkall.sh`-style loop, see Commands) and the whole campaign once in ONE process (`chain`, 27/27 PASS, carry-over checked, ending included). The solo run is deterministic
+(two runs give identical seconds/teleports).
 
-| # | level | result (solo run) | notes |
-|---|---|---|---|
-| 1 | rh3-miasteczko0 | PASS 186 s, 0 tele | marker, walks 7000 units to a vantage and kills the target with the M-14 (the bot adds the M-14 to the holster: it does not wait for the Prolog10 `receive`) |
-| 2 | rh1-wiezienie1 | PASS 0.4 s skipped; unskipped intro PASS 73 s (`MESTER_WALK_NOSKIP=1`) | intro -> `intro zwei` -> rh1-wiezienie2 |
-| 3 | rh1-wiezienie2 | PASS 38 s, 5 tele | cell grates `kratacelagora`/`krata2` are not player-usable |
-| 4 | rh1-wiezienie3 | PASS 12 s, 1 tele | hop into the exit corridor (owner: crouch-jump spot, teleport accepted) |
-| 5 | rh2-wiezienie1 | PASS 45 s, 6 tele | `sector2b` has no player opener; stuck steps at glass leaves |
-| 6 | rh2-wiezienie2 | PASS 32 s, 2 tele | bus cutscene fires, `rh3-miasteczko1` loads; last leg is a gap step (route only through solid props) |
-| 7 | rh3-miasteczko1 | PASS 75 s, 5 tele | slopes |
-| 8 | rh3-miasteczko2 | PASS 72 s, 3 tele | |
-| 9 | burmistrz1 | PASS 100 s, 10 tele | talk mayor, answer 1, exit marker; stuck on the steep stair runs (bot following, planner accepts them) |
-| 10 | burmistrz2 | PASS 88 s, 7 tele | two markers, talk |
-| 11 | chapel_mniejszy | PASS 113 s, 3 tele | detector, seven answers, exit marker, door |
-| 12 | knajpa | PASS 362-377 s, 35 tele | marker, talk, two answers, wait 20 s (slowest bot level: long walk between the bar and the exit) |
-| 13 | rh7a-tunele | PASS 8 s, 2 tele | exit region unconnected in the hull (owner: teleport accepted) |
-| 14 | podziemia1 | PASS 134 s, 16 tele | exit door |
-| 15 | podziemia1a | PASS 31 s, 1 tele | |
-| 16 | podziemia1b | PASS 106 s, 15 tele | 16-step stair |
-| 17 | podziemia1c | PASS 57 s, 5 tele | detector marker fires `hujjj` (needed the brush stair rule, below) |
-| 18 | chinatown2 | PASS 188-200 s, 11-13 tele | marker, Golden cat (on a table: taken with the held use key or by gap step), exit marker |
-| 19 | rh9-fabryka | PASS 346-372 s, 31-39 tele | talk, three answers, marker |
-| 20 | rh10-wiezowiec1 | PASS 60 s, 0 tele | |
-| 21 | rh10-wiezowiec2 | PASS 198-210 s, 10-12 tele | |
-| 22 | rh10-wiezowiec3 | PASS 82 s, 2 tele | |
-| 23 | wiez_wn1 | PASS 20 s, 0 tele | gate row opened by E on its lever |
-| 24 | wiez_wn2 | PASS 11 s, 0 tele | |
-| 25 | wiez_wn3 | PASS 14 s, 0 tele | |
-| 26 | rh12-lab1 | PASS 110 s, 13 tele | lifts `winda1/2` block the bot at a door frame |
-| 27 | rh12-lab2 | PASS | outro, three slides, credits, last slide, MAIN MENU, New game starts rh3-miasteczko0 (`MESTER_WALK_ENDING=1`) |
+| # | level | result (solo) | tele | dmg | prev | notes |
+|---|---|---|---|---|---|---|
+| 1 | rh3-miasteczko0 | PASS 85.9 s | 0 | 1924 | 186 s / 0 | the target o_postac08 patrols: the bot shot from a spot the target had left (bot, see below); now re-chooses its vantage |
+| 2 | rh1-wiezienie1 | PASS 0.4 s skipped (`story` start) | 0 | 0 | 0.4 s | unskipped intro 73 s with `MESTER_WALK_NOSKIP=1`; started as `story`, not by world name |
+| 3 | rh1-wiezienie2 | PASS 24.7 s | 2 | 0 | 38 s / 5 | cell grates `kratacelagora`/`krata2` are not player-usable |
+| 4 | rh1-wiezienie3 | PASS 12.3 s | 1 | 0 | 12 s / 1 | hop into the exit corridor (crouch-jump spot, teleport accepted) |
+| 5 | rh2-wiezienie1 | PASS 27.2 s | 2 | 96 | 45 s / 6 | `sector2b` has no player opener |
+| 6 | rh2-wiezienie2 | PASS 36.7 s | 3 | 410 | 32 s / 2 | bus cutscene fires, `rh3-miasteczko1` loads |
+| 7 | rh3-miasteczko1 | PASS 75.0 s | 5 | 1024 | 75 s / 5 | slopes |
+| 8 | rh3-miasteczko2 | PASS 66.4 s | 2 | 993 | 72 s / 3 | (was 139 s / 15 tele before the teleport fix) |
+| 9 | burmistrz1 | PASS 92.8 s | 7 | 2244 | 100 s / 10 | |
+| 10 | burmistrz2 | PASS 82.3 s | 7 | 1764 | 88 s / 7 | |
+| 11 | chapel_mniejszy | PASS 97.0 s | 0 | 255 | 113 s / 3 | |
+| 12 | knajpa | PASS 232 s | 18 | 4974 | 362 s / 35 | in the chain the solver plans `kill o_postac6` first (see below): PASS 121 s |
+| 13 | rh7a-tunele | PASS 8.3 s | 2 | 0 | 8 s / 2 | exit region unconnected in the hull (teleport accepted) |
+| 14 | podziemia1 | PASS 133.7 s | 16 | 3290 | 134 s / 16 | |
+| 15 | podziemia1a | PASS 31.1 s | 2 | 290 | 31 s / 1 | |
+| 16 | podziemia1b | PASS 80.5 s | 10 | 392 | 106 s / 15 | |
+| 17 | podziemia1c | PASS 46.0 s | 3 | 658 | 57 s / 5 | |
+| 18 | chinatown2 | PASS 197.3 s | 12 | 1000 | 188-200 s / 11-13 | |
+| 19 | rh9-fabryka | PASS 240.6 s | 20 | 5180 | 346-372 s / 31-39 | target o_postac3 patrols (vantage with trail) |
+| 20 | rh10-wiezowiec1 | PASS 63.1 s | 0 | 615 | 60 s / 0 | |
+| 21 | rh10-wiezowiec2 | PASS 196.9 s | 9 | 8004 | 198-210 s / 10-12 | most dangerous level for the bot (13 NPCs noticed it) |
+| 22 | rh10-wiezowiec3 | PASS 67.6 s | 1 | 3666 | 82 s / 2 | |
+| 23 | wiez_wn1 | PASS 15.0 s | 0 | 247 | 20 s / 0 | gate row opened by E on its lever |
+| 24 | wiez_wn2 | PASS 16.6 s | 1 | 226 | 11 s / 0 | |
+| 25 | wiez_wn3 | PASS 13.8 s | 0 | 0 | 14 s / 0 | |
+| 26 | rh12-lab1 | PASS 61.6 s | 3 | 826 | 110 s / 13 | |
+| 27 | rh12-lab2 | PASS (credits) | | | PASS | outro, three slides, credits, last slide, MAIN MENU, New game starts rh3-miasteczko0 (`MESTER_WALK_ENDING=1`) |
+| - | chinatown (Kiskina, label `walk-chinatown`) | PASS 70.0 s | 5 | 0 | 201 s / 8 | from its StartPoint to `b_door0`, whose own jump leads to chinatown2 |
+| - | chain (one process, rh3-miasteczko0 -> credits -> main menu -> new game) | 26/27 real exits, wiez_wn1 BLOCKED (bot), then outro, credits, main menu, new game OK | | | 27/27 | knajpa 121 s, burmistrz1 140 s; wiez_wn1: see below |
 
 Other flows proven headlessly: death -> F9 (`MESTER_WALK_DEATH=1` with a scratch `MESTER_USER_DIR`: dead, F9 reloads rh1-wiezienie2, health 100, alive), carry-over of items across
 the 27 real exits (chain run), cutscenes: intro (73 s unskipped), bus, outro (in the chain), credits scroll and the return to the main menu.
 
-Commands (Git Bash, worktree crates/level-viewer, `CARGO_TARGET_DIR=C:/Temp/mester-scenes-target`, `cargo build --release -j 4`):
+Commands (Git Bash, worktree crates/level-viewer, any `CARGO_TARGET_DIR`, `cargo build -j 4` (the dev profile of Cargo.toml is optimized) or `cargo build --release -j 4`):
 
 ```
 # one level (rh1-wiezienie1 is started as `story`), hidden window, silent, ~10x real time
@@ -135,8 +138,41 @@ MESTER_SILENT=1 MESTER_TEST_SCENARIO=walk MESTER_WALK_COUNT=1 MESTER_WALK_BUDGET
 # the whole campaign in one process (real exits, carry-over), ending included
 MESTER_SILENT=1 MESTER_TEST_SCENARIO=walk MESTER_WALK_COUNT=27 MESTER_WALK_BUDGET=900 MESTER_WALK_TIMEOUT=90000 MESTER_NOVSYNC=1 MESTER_WALK_ENDING=1   level-viewer.exe rh3-miasteczko0 ../../output out.png 5
 ```
+Per-level loop of the 2026-10-01 proof (dev-optimized build, `cargo build -j 4` in the worktree, `CARGO_TARGET_DIR` anywhere; one level at a time, never two walk processes):
+```
+for L in rh3-miasteczko0 rh1-wiezienie2 ... chinatown; do   # rh1-wiezienie1 is started as `story` (the intro only runs from there): MESTER_WALK_LEVELS=rh1-wiezienie1 ... level-viewer.exe story ...
+  MESTER_SILENT=1 MESTER_TEST_SCENARIO=walk MESTER_WALK_LEVELS=$L MESTER_WALK_BUDGET=900 MESTER_WALK_TIMEOUT=6000 MESTER_NOVSYNC=1     timeout 1500 level-viewer.exe $L ../../output out.png 5 > $L.log; done
+```
+`python -m tools.run_probes --exe <exe>` runs the 50 probe scenarios (about 5 minutes; 50/50 PASS on this proof). `MESTER_WALK_TRACE=1` adds the bot diagnostics (position/waypoint/stance every
+0.25 s, the placement after a teleport, sweeps and ray of a stuck step); the kill goal prints the first thing on the bullet line when the target survives.
+
 Extra switches: `MESTER_WALK_NOSKIP=1` (play the intro), `MESTER_WALK_DEATH=1` (F5/death/F9), `MESTER_WALK_DOORDEBUG=1` (door/leaf diagnostics), `MESTER_WALK_SPEED` (obsolete since
 scenario frames are fixed 0.05 s; keep 1). Never run two walk processes at once: the second hidden window loses its swap chain (wgpu "Acquiring a texture failed").
+
+### Regression proof 2026-10-01 (everything of main since the last proof: AI sight/bullet filters, NPC door requests, script action order, ...)
+
+Result: probes 50/50, 27 levels + chinatown PASS solo, chain 27/27 (see table). No game regression was found; every failure was a bot or probe limitation, fixed:
+* `sounds` probe held R for the Mossberg reload: the reload key is level triggered since 4915f9e, so a held R restarts the shotgun shell cycle every frame (retail 0x10060d08) and the
+  shell/sound never comes. The probe now presses R only until the reload runs.
+* Probe teleports were *corrected as movement*: `npcs::block_player` and the door/prop correction pass of `doors::tick` sweep every position change under 150 units from the old
+  position against actors, props and the hull, so a bot teleport across a thin wall (or a prop box such as `o_obiekt1` in miasteczko2) was clamped back (15 stuck teleports instead of 3,
+  139 s instead of 66 s). `Walking::teleported` (set by `campaign_probe::place`) skips both passes for that frame. The game itself is unchanged (no player can jump 80 units).
+* Kill goals: the vantage test used an eye 6 units below the real camera and a spot the bot only reaches within 30 units; the patrolling targets (miasteczko0 `o_postac08`,
+  fabryka `o_postac3`) walked on while the bot crossed the level (a 40 s shoot-out against a wall, three times). The bot aims from the camera, requires a line from the spot and 20 units
+  around it, keeps the target's trail and re-chooses the vantage (best view of the trail, never a spot that already failed) after 15 s.
+* knajpa in the chain: the solver now plans `kill o_postac6` BEFORE the marker (the reverse script order changed which plan is cheapest); the bartender stands behind the counter,
+  so the vantage must see him over it (fixed by the robust vantage). Solo the plan is marker first, the target then walks to the far end.
+* **OPEN** wiez_wn1 in the full chain (only there; solo PASS 15 s, and the 4-level chain wiezowiec1..wn1 PASS): the bot reaches the end of the drawer-gate row after the gates have closed
+  again (they close when the player is 128 units from the first gate, and an actor's door request had opened the later gates earlier) and ping-pongs between the first gate `b_szuflada0`
+  (its opener) and the door `b_door0` (3 attempts of the bot fix: closed leaf in front of the door takes the press, walk to its opener, one press per 3 s + 8 s rush). Judged a BOT limit
+  (the level is passable solo and the gates behave as in retail docs) but NOT proven: the game state of the chain at that point (NPCs hostile and moving 90k units, 2000-3800 damage)
+  differs from the solo run; the harness continues with wiez_wn2 after the BLOCKED level, so the credits/main-menu/new-game proof still ran.
+* Noise that is not a bug: `matNNNN: N gyari texturakoordinata nem veges` (export data of chapel/burmistrz, textured-less fallback), the wgpu "Loader Message" lines, the one
+  `Original dialogue is undefined: Mason13` (chinatown), the 8-20 s "hitches" (the bot's own A* at a goal start: 400000 cells), and the rare `Couldn't get swap chain texture` panic of a
+  hidden window (seen once in a chain run: rerun; never run another window/walk process at the same time).
+* Not seen: NaN / non-finite state, panics from the game, doors that stay shut for the AI (the NPC door requests opened `b_door2` 54x, `b_door17` 27x ...), NPCs that never move
+  (npc movement > 3000 units in every level with characters). Levels with dmg 0 (wiezienie2/3, tunele, wn3, chinatown) are passed before the guards see the bot; the `ai-fight`/`ai-far`/
+  `ai-patrol`/`gunfire`/`noise` probes cover attacks.
 
 ### Game bugs found and fixed by the proof runs
 * **Brush stair rule** (`doors.rs` correction pass): a side contact with a solid brush whose top is at most one stair (18) above the feet is stepped onto, like the

@@ -1,6 +1,6 @@
 # Fejlesztői útmutató — fordítás forrásból
 
-**Ha játszani szeretnél, a [Windows játékoscsomag](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Mesterlovesz-Ujratoltve-Windows.zip) már elérhető. [Játékos útmutató: ZIP kibontása → ISO az Indit.bat mellé → dupla kattintás](PLAYER-hu.md). Rust és Python telepítése nem szükséges.**
+**Ha játszani szeretnél, a [Windows játékoscsomag](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.2/Mesterlovesz-Ujratoltve-Windows.zip) már elérhető. [Játékos útmutató: ZIP kibontása → ISO az Indit.bat mellé → dupla kattintás](PLAYER-hu.md). Rust és Python telepítése nem szükséges.**
 
 Az alábbi leírás kizárólag a forráskódból fordításhoz szól. Fejlesztőként Rust MSVC, C++ Build Tools és Python szükséges, és az Indit.cmd indítót használod.
 

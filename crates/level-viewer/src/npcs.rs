@@ -698,7 +698,7 @@ fn spawn_npc(commands:&mut Commands,config:&crate::ViewerConfig,assets:&AssetSer
     let model=roster.models.entry(definition.model.clone()).or_insert_with(||Arc::new(Model::load(&config.output,&definition.model))).clone();
     let original_skins=definition.skin_variants.values().nth(spawn.source_object_index%definition.skin_variants.len().max(1)).unwrap_or(&definition.skins).clone();
     let mut skins=original_skins.clone();
-    let personal_face=config.output.join(UMBRELLA_FACE).is_file() && apply_umbrella_face(&config.world,&spawn.definition_name,&mut skins);
+    let personal_face=ensure_umbrella_face(&config.output) && apply_umbrella_face(&config.world,&spawn.definition_name,&mut skins);
     let mut actor=Npc::from_spawn(spawn,definition.clone());actor.visible=!emitter;
     let initial=actor.begin_phase(&definition.default_phase,false,&roster.navigation).unwrap_or_default();
     actor.position=if actor.definition_name=="gazeta" {paper_ground_position(world,actor.position,actor.half_extents)}
@@ -759,9 +759,18 @@ fn spawn_npc(commands:&mut Commands,config:&crate::ViewerConfig,assets:&AssetSer
 fn body_transform(actor:&Npc)->Transform {
     Transform {translation:(actor.body_center()+actor.vel)*crate::SCALE,rotation:actor.rotation,scale:Vec3::splat(crate::SCALE)}
 }
-/// Painted by hand and fitted with `tools/fit_umbrella_face.py`; not part of the
-/// retail export, so a checkout without it keeps the original head.
+/// Fitted with `tools/fit_umbrella_face.py`; the community easter egg is included
+/// in every build independently of the retail export.
 const UMBRELLA_FACE:&str="mods/umbrella_face.png";
+/// The fitted face is part of the build (crates/level-viewer/assets/umbrella_face.png, compiled in), so a fresh `output/` made by the exporters still gets it:
+/// the file is refreshed in `output/mods/` if an older export has another face.
+static UMBRELLA_FACE_PNG:&[u8]=include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"),"/assets/umbrella_face.png"));
+pub(crate) fn ensure_umbrella_face(output:&std::path::Path)->bool {
+    let path=output.join(UMBRELLA_FACE);
+    if std::fs::read(&path).is_ok_and(|bytes| bytes==UMBRELLA_FACE_PNG) {return true;}
+    if let Some(parent)=path.parent() {let _=std::fs::create_dir_all(parent);}
+    std::fs::write(&path,UMBRELLA_FACE_PNG).is_ok()
+}
 fn apply_umbrella_face(world:&str,character:&str,skins:&mut BTreeMap<String,String>)->bool {
     // Deliberate easter egg for the Hungarian community, in both editions.
     if world=="rh3-miasteczko0" && character=="cywil1p" {
@@ -926,6 +935,7 @@ pub fn block_player(roster:Res<NpcRoster>,mut walking:ResMut<crate::Walking>,
     session:Res<crate::settings::Session>,opening:Res<crate::opening::Opening>,travel:Res<crate::travel::Travel>,
     mut camera:Single<&mut Transform,With<crate::InspectionCamera>>,mut previous:Local<Option<(u64,Vec3)>>) {
     if session.paused || opening.active {return;}
+    if walking.teleported {*previous=Some((travel.arrived,bevy_vec(walking.player.position)));return;}
     let (centre,half,velocity)=(bevy_vec(walking.player.position),bevy_vec(walking.player.half_size()),bevy_vec(walking.player.velocity));
     let mut resolved=centre;
     if let Some((revision,old))=*previous {if revision==travel.arrived && centre.distance(old)<150.0 {

@@ -1318,3 +1318,17 @@ fn the_invisible_console_variable_blinds_every_actor_test() {
     assert!(!blind.notices(0,&frame),"a stimulus right next to it is not heard");
     blind.invisible=false;assert!(blind.notices(0,&frame));
 }
+
+#[test]
+fn the_umbrella_face_is_compiled_in_and_written_when_missing() {
+    assert!(UMBRELLA_FACE_PNG.starts_with(&[0x89,b'P',b'N',b'G']),"the embedded face is a PNG");
+    let dir=std::env::temp_dir().join(format!("umbrella-face-test-{}",std::process::id()));
+    let _=std::fs::remove_dir_all(&dir);
+    assert!(ensure_umbrella_face(&dir));
+    assert_eq!(std::fs::read(dir.join("mods/umbrella_face.png")).unwrap(),UMBRELLA_FACE_PNG);
+    assert!(ensure_umbrella_face(&dir),"an existing file is left alone");
+    std::fs::write(dir.join("mods/umbrella_face.png"),b"older face from a previous export").unwrap();
+    assert!(ensure_umbrella_face(&dir),"an old export is upgraded without re-exporting the ISO");
+    assert_eq!(std::fs::read(dir.join("mods/umbrella_face.png")).unwrap(),UMBRELLA_FACE_PNG);
+    let _=std::fs::remove_dir_all(&dir);
+}

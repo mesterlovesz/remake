@@ -83,7 +83,8 @@ struct ViewerConfig {
 }
 
 #[derive(Resource)]
-struct Walking { world:CollisionWorld, player:Player, yaw:f32, pitch:f32, footstep:usize }
+/// `teleported`: a probe moved the player by hand this frame (campaign_probe::place): the actor/hull correction of npcs::block_player must not treat it as a move.
+struct Walking { world:CollisionWorld, player:Player, yaw:f32, pitch:f32, footstep:usize, teleported:bool }
 
 #[derive(Component)]
 struct InspectionCamera;
@@ -234,7 +235,7 @@ fn setup(
     world.place_player(&mut player);
     // MESTER_STEP_CLAMP_QUIRK=1: retail's 4 units per frame before the first crouch (frame-rate dependent, see docs/retail-movement-audit.md).
     player.initial_clamp_quirk=std::env::var_os("MESTER_STEP_CLAMP_QUIRK").is_some();
-    commands.insert_resource(Walking {world,player,yaw,pitch:campaign.saved_player().map_or(0.0,|saved|saved.pitch),footstep:0});
+    commands.insert_resource(Walking {world,player,yaw,pitch:campaign.saved_player().map_or(0.0,|saved|saved.pitch),footstep:0,teleported:false});
     view.enter_level();
     let mut camera=commands.spawn((Camera3d::default(),Camera {clear_color:bevy::camera::ClearColorConfig::Custom(fog.clear_color()),..default()},Projection::custom(view::RetailProjection::new(view::retail_fov(session.preferences.fov),0.1)),
         bevy::core_pipeline::tonemapping::Tonemapping::None,

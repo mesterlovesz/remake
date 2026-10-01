@@ -312,7 +312,9 @@ pub fn tick(mut doors:Query<(Entity,&mut Door)>,mut parts:Query<(&DoorPart,&mut 
     // The pass tracks the hull CENTRE: crouching moves the feet by 34 units without the player moving, which would sweep over phantom distance.
     let (center,half,mut velocity)=(render(walking.player.position),render(retail_half),render(walking.player.velocity));
     let mut resolved=center;let field=props.field();let mut supported=false;
-    if let Some((revision,old))=*previous {if revision==travel.arrived && (center-old).length()<150.0 {
+    // A probe teleport (Walking::teleported, set by campaign_probe::place, seen by npcs::block_player first) is no movement to correct.
+    let teleported=std::mem::take(&mut walking.teleported);
+    if let Some((revision,old))=*previous {if revision==travel.arrived && !teleported && (center-old).length()<150.0 {
         let mut position=old;let mut remaining=center-old;
         let needs_correction=doors.iter().any(|(_,door)|door.sweep(position,half,remaining).is_some()) || field.sweep(position,half,remaining).is_some();
         // The retail controller owns static movement. Recheck static surfaces

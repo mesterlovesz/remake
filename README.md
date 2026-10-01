@@ -11,6 +11,7 @@ A 2002-es **A Mesterlövész** (*Sniper: Path of Vengeance*, magyar 2.33-as kiad
 - Az eredeti menük, beállítások, mentés és töltés, gyorsmentés és gyorstöltés.
 - Az eredeti pályafájlokból kinyert hálók, textúrák és lightmapek.
 - A kampányból kihagyott **Kiskína** a **Bónusz** menüből indítható, külön mentéssel.
+- A prológus esernyős emberének közösségi bohócarcos easter eggje a build része; régi exportból is automatikusan frissül.
 - Dokumentált visszafejtés: a kiolvasott értékek, kódcímek, ellenőrzött és közelítő részek a [docs](docs/) mappában vannak.
 
 A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabályokat követő Rust motor- és játékrendszer-újraírás; nem teljes, binárisan egyező C/C++ dekompiláció egyszerű átfordítása. A teljes képpontos és viselkedési azonosságot még nem igazoltuk. Az automata kampánybejárás eredményei a kutatási dokumentumokban olvashatók.
@@ -27,7 +28,7 @@ A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabály
 
 ## Indítás Windows 10/11-en — három lépés
 
-**[Windows játékoscsomag letöltése (48 MB)](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Mesterlovesz-Ujratoltve-Windows.zip)**
+**[Windows játékoscsomag letöltése (48 MB)](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.2/Mesterlovesz-Ujratoltve-Windows.zip)**
 
 1. **Csomagold ki a ZIP teljes tartalmát** egy írható mappába. Jobb kattintás → **Az összes kibontása**.
 2. A [weboldal Játékfájlok gombjával](https://sniper.gay/#inditas) töltsd le az Archive.org magyar ISO-ját, és **tedd az Indit.bat mellé**.

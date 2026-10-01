@@ -101,7 +101,7 @@ pub fn tick(mut probe:ResMut<Probe>,mut script:Local<Script>,time:Res<Time>,mut 
                 2=>{
                     let Some(file)=sound("reload") else {return fail(&mut probe,format!("{name} has no reload sound"))};
                     if script.cursor.first() {script.base=count(&file);}
-                    if count(&file)>base {controls.reload=false;script.summary.push(format!("{name} reload {file}"));Step::Done}else{controls.reload=true;Step::Wait("the reload sound")}
+                    if count(&file)>base {controls.reload=false;script.summary.push(format!("{name} reload {file}"));Step::Done}else{controls.reload=!native.inventory.reloading();Step::Wait("the reload sound")}
                 },
                 _=>Step::when(!native.inventory.reloading(),"the reload to end"),
             }

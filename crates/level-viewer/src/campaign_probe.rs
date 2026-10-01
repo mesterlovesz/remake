@@ -18,7 +18,7 @@ pub(crate) fn place(walking:&mut Walking,mut position:Vec3,target:Vec3) {
             if !walking.world.box_overlaps(candidate,retail_movement::Vec3::new(25.0,58.0,25.0)) {position=Vec3::new(candidate.x,candidate.y,candidate.z);break 'search;}
         }}
     }}
-    walking.player.position=retail_movement::Vec3::new(position.x,position.y,position.z);walking.player.velocity=retail_movement::Vec3::ZERO;
+    walking.player.position=retail_movement::Vec3::new(position.x,position.y,position.z);walking.player.velocity=retail_movement::Vec3::ZERO;walking.teleported=true;
     let direction=(target-(position+Vec3::Y*40.0)).normalize();walking.yaw=(-direction.x).atan2(-direction.z);walking.pitch=direction.y.asin();
 }
 /// True when nothing solid (wall or closed door) lies between `eye` and `target`.
