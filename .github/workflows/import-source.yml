@@ -1,0 +1,33 @@
+name: Játékforrás első feltöltése
+on:
+  push:
+    branches: [main]
+    paths: ['game-upload-*.zip']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Forráscsomag kibontása
+        if: hashFiles('game-upload-*.zip') != ''
+        run: |
+          python3 - <<'PY'
+          import glob, pathlib, zipfile
+          root = pathlib.Path.cwd().resolve()
+          for bundle in sorted(glob.glob('game-upload-*.zip')):
+              with zipfile.ZipFile(bundle) as archive:
+                  for entry in archive.infolist():
+                      target = (root / entry.filename).resolve()
+                      if not target.is_relative_to(root) or '.git' in pathlib.PurePosixPath(entry.filename).parts:
+                          raise RuntimeError('Érvénytelen csomagútvonal')
+                  archive.extractall(root)
+          PY
+          git rm -- game-upload-*.zip
+          git add -A -f -- .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Publish original-game source and Hungarian setup guide'
+          git push
