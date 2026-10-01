@@ -1,0 +1,16 @@
+# Generated from the retail game; never published.
+/output/
+# Retail-derived media extracted for the cut-content research.
+/docs/cut-content-media/
+# Local backups and personal images.
+/_mentes/
+/ChatGPT-*.png
+
+/**/target/
+/**/target-*/
+/tools/*.exe
+/tools/*.pdb
+/**/__pycache__/
+*.pyc
+
+/crates/mw2-export/iw4l-artifacts/

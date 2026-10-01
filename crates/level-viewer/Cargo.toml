@@ -1,0 +1,28 @@
+[package]
+name = "level-viewer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "=0.18.1", features = ["wav", "mp3", "jpeg"] }
+serde_json = "=1.0.151"
+serde = { version = "1", features = ["derive"] }
+retail-movement = { path = "../retail-movement" }
+mission-runtime = { path = "../mission-runtime" }
+# The version Bevy's audio uses: the output-device report (audio.rs) reads cpal through it, tests run its sink chain without a device.
+rodio = { version = "=0.20.1", default-features = false }
+
+# The automated walk-through plans routes with thousands of collision sweeps and script searches; keep these crates fast in debug builds.
+[profile.dev.package.parry3d]
+opt-level = 3
+[profile.dev.package.retail-movement]
+opt-level = 3
+[profile.dev.package.mission-runtime]
+opt-level = 3
+
+# The launchers run target\debug: without these Bevy is unoptimised (a few frames per second). Bevy's own recommended dev profile:
+# our code at opt-level 1 (debug assertions and fast incremental builds stay), every dependency (Bevy, wgpu, rodio, ...) at 3.
+[profile.dev]
+opt-level = 1
+[profile.dev.package."*"]
+opt-level = 3

@@ -1,0 +1,17 @@
+[package]
+name = "retail-movement"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+world-query = { package = "mesterlovesz-world-query", path = "../world-query" }
+parry3d = "=0.30.2"
+
+[dev-dependencies]
+serde_json = "=1.0.151"
+
+# Level-wide movement tests sweep hundreds of thousands of triangle queries.
+[profile.dev.package.parry3d]
+opt-level = 3
+[profile.dev.package.retail-movement]
+opt-level = 2

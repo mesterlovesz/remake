@@ -1,0 +1,8 @@
+[package]
+name = "mesterlovesz-world-query"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "world_query"
+path = "src/lib.rs"
