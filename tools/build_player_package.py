@@ -31,6 +31,7 @@ def build(source: Path, exe: Path, dependencies: Path, out: Path):
     internal = out / '.player'
     runtime = internal / 'python'
     runtime.mkdir(parents=True)
+    shutil.copytree(dependencies / 'rust-licenses', internal / 'licenses' / 'rust')
     python_zip = dependencies / 'python-3.13.16-embed-amd64.zip'
     if sha(python_zip) != '97dae5274cc54867065e8d5a3226e48c35017ed332a0fdb0e27d5b5821961297':
         raise SystemExit('Python runtime checksum mismatch')
@@ -102,6 +103,9 @@ def build(source: Path, exe: Path, dependencies: Path, out: Path):
         'and its Gyan FFmpeg 7.1 converter is extracted for the user. It is GPL-3.0:\n'
         'https://github.com/imageio/imageio-ffmpeg/tree/v0.6.0 ; https://www.gyan.dev/ffmpeg/builds/\n'
         'https://github.com/FFmpeg/FFmpeg/tree/n7.1 ; https://ffmpeg.org/legal.html\n'
+        'Rust game dependencies: .player/licenses/rust/ contains original notices, READMEs and the license catalog.\n'
+        'Unchanged corresponding Cargo source archives are available in Rust-dependency-sources.zip in the same release:\n'
+        'https://github.com/mesterlovesz/remake/releases/tag/v0.1.0-player.1\n'
         'The game and exporters are available at https://github.com/mesterlovesz/remake\n', encoding='utf-8')
     print(json.dumps(manifest, indent=2))
 

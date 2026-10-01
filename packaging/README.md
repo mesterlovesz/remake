@@ -11,10 +11,14 @@ A készítő gépén Rust MSVC, Visual Studio C++ Build Tools, Python 3 és Git 
 ```powershell
 cargo build --release --locked --manifest-path crates/level-viewer/Cargo.toml
 python -m tools.download_player_dependencies --out player-deps
+cargo metadata --locked --offline --format-version 1 --manifest-path crates/level-viewer/Cargo.toml > player-deps/cargo-metadata.json
+python -m tools.collect_player_licenses --metadata player-deps/cargo-metadata.json --cargo-home $env:CARGO_HOME --out player-deps/rust-licenses --sources player-dist/Rust-dependency-sources.zip
 python -m tools.build_player_package --source . --exe crates/level-viewer/target/release/level-viewer.exe --dependencies player-deps --out player-dist/Mesterlovesz-Ujratoltve
 ```
 
 Ha külön célmappába fordítasz (`CARGO_TARGET_DIR`), az `--exe` értéke az ott készült fájl legyen. A csomagoló új célmappát kér, és ellenőrzi a rögzített függőségek SHA-256 értékeit. A `.player/package.json` tartalmazza a forráspillanat commitazonosítóját, a futtatható fájl és a függőségek ellenőrzőösszegeit. A függőségek licencszövegei és a `THIRD-PARTY-NOTICES.txt` a csomagban vannak.
+
+A `player-dist` mappát a parancsok előtt hozd létre. Ha a `CARGO_HOME` nincs beállítva, a szokásos `$env:USERPROFILE/.cargo` útvonalat add meg. A `Rust-dependency-sources.zip` külön kiadási melléklet legyen; a játék indításához nem szükséges letölteni. A licenckatalógus minden feloldott platform függőségeit tartalmazza, a Windows binárisban nem használtakat is.
 
 A `player-dist/Mesterlovesz-Ujratoltve` mappát teljes egészében ZIP-be kell tenni, a rejtett `.player` mappával együtt. ISO, `GYARI`, `output`, személyes kép, mentés vagy weboldal ne kerüljön bele.
 
