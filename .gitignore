@@ -13,4 +13,9 @@
 /**/__pycache__/
 *.pyc
 
+/player-deps/
+/player-test/
+/player-dist/
+/player-build.log
+
 /crates/mw2-export/iw4l-artifacts/

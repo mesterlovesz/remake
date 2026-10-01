@@ -15,58 +15,31 @@ A 2002-es **A Mesterlövész** (*Sniper: Path of Vengeance*, magyar 2.33-as kiad
 
 A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabályokat követő Rust motor- és játékrendszer-újraírás; nem teljes, binárisan egyező C/C++ dekompiláció egyszerű átfordítása. A teljes képpontos és viselkedési azonosságot még nem igazoltuk. Az automata kampánybejárás eredményei a kutatási dokumentumokban olvashatók.
 
-## Egyszerű játékoscsomag
+## Indítás Windows 10/11-en — három lépés
 
-A tervezett folyamat: **ISO a mappába → dupla kattintás az indítóra → játék**, fejlesztői programok telepítése nélkül.
+**[Windows játékoscsomag letöltése (45 MB)](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Mesterlovesz-Ujratoltve-Windows.zip)**
 
-Ez a csomag még nem készült el. A mostani tároló forrásból futtatható; ehhez az alábbi előkészítés kell.
-
-## Jelenlegi indítás Windows 10/11-en
-
-### 1. A projekt letöltése
-
-Ezen az oldalon kattints a **Code → Download ZIP** gombra, és csomagold ki a ZIP-et egy tetszőleges mappába. Például: `D:\Mesterlovesz\projekt`.
-
-### 2. A fejlesztői eszközök telepítése
-
-- **[Rust](https://rustup.rs/)**: futtasd a telepítőt. Fogadd el a **Visual Studio C++ Build Tools** telepítését is, ha felajánlja. Legalább Rust 1.89 szükséges.
-- **[Python 3](https://www.python.org/downloads/)**: legalább 3.10. A telepítőben pipáld be az **Add python.exe to PATH** lehetőséget.
-- Naprakész videokártya-illesztő és Vulkan-képes videokártya.
-
-A telepítések után nyiss új ablakot, vagy indítsd újra a gépet, ha a telepítő ezt kéri.
-
-### 3. Az eredeti magyar játék ISO-ja
-
-A letöltési gomb a [weboldal indítási részében](https://sniper.gay/#inditas) található. Az **Archive.org-os magyar ISO-t** használd.
-
-1. Kattints duplán az ISO-ra a Fájlkezelőben. Ha nem csatlakozik, jobb klikk → **Csatlakoztatás**.
-2. A virtuális DVD-n nyisd meg az **A mesterlövész** mappát, majd indítsd a **setup.exe** fájlt.
-3. Telepítési célként a projekt mappája melletti **GYARI** mappát add meg. Például: `D:\Mesterlovesz\GYARI`.
-4. Az eredeti játékot nem kell elindítani, javítócsomag sem kell. A remake az eredeti fájlokat csak olvassa.
-
-Az ISO önmagában még nem a telepített játék. Akkor jó a mappa, ha közvetlenül benne van a `Lithtech.exe` és a `cshell.dll`:
+1. **Csomagold ki a ZIP teljes tartalmát** egy írható mappába. Jobb kattintás → **Az összes kibontása**.
+2. A [weboldal Játékfájlok gombjával](https://sniper.gay/#inditas) töltsd le az Archive.org magyar ISO-ját, és **tedd az Indit.bat mellé**.
+3. **Dupla kattintás az Indit.bat-ra.** Első alkalommal az indító előkészíti az adatokat, majd megjelenik a főmenü.
 
 ```text
 Mesterlovesz/
-├── GYARI/
-│   ├── Lithtech.exe
-│   ├── cshell.dll
-│   ├── worlds/
-│   ├── models/
-│   └── ...
-└── projekt/
-    ├── Indit.cmd
-    ├── crates/
-    └── tools/
+├── Indit.bat
+├── A_mesterlovesz.iso
+├── .player/
+└── OLVASS-EL.txt
 ```
 
-### 4. Dupla kattintás: Indit.cmd
+**Rustot, Pythont és az eredeti játék telepítőjét nem kell telepítened.** Az előre lefordított játék és a szükséges indítóeszközök a csomagban vannak. Rendszergazdai jog sem szükséges.
 
-Az indító ellenőrzi a szükséges programokat, telepíti a Python-segédcsomagokat, kinyeri az adatokat, lefordítja és elindítja a játékot. Az első alkalom sokáig tarthat és internetet igényel. Hagyd nyitva az ablakot.
+Kell hozzá **64 bites Windows 10/11, Vulkan-képes videokártya és 5 GB szabad hely**. Első alkalommal internet szükséges a médiafeldolgozó automatikus letöltéséhez (31 MB), és az előkészítés néhány perc. A későbbi indításokhoz internet sem kell. Az ISO az első sikeres előkészítés után eltávolítható. Az `output`, `GYARI` és `.player` mappák maradjanak az indító mellett.
 
-A későbbi indításkor a kész lépések kimaradnak. Ha hiba történik, az ablak kiírja a teendőt; a megjavítása után újraindítható.
+Részletes játékos útmutató: [docs/PLAYER-hu.md](docs/PLAYER-hu.md).
 
-Részletes leírás: [docs/SETUP-hu.md](docs/SETUP-hu.md).
+### Fejlesztőknek: forrásból fordítás
+
+A **Code → Download ZIP** a forrást tölti le. Ennek fordításához Rust MSVC, C++ Build Tools és Python szükséges; a külön lépések a [docs/SETUP-hu.md](docs/SETUP-hu.md) fájlban vannak. A játékoscsomag elkészítését a [packaging/README.md](packaging/README.md) írja le.
 
 ## Irányítás
 
@@ -85,11 +58,11 @@ Részletes leírás: [docs/SETUP-hu.md](docs/SETUP-hu.md).
 
 ## Hibaelhárítás
 
-- **Python nem található**: ellenőrizd a Python telepítésénél a PATH jelölőnégyzetet; indíts új ablakot.
-- **link.exe / fordító nem található**: telepítsd a Visual Studio C++ Build Tools C++ eszközeit.
-- **GYARI hiányzik**: közvetlenül a `GYARI/Lithtech.exe` legyen meg, ne egy további almappában.
+- **ISO hiányzik**: tedd közvetlenül az `Indit.bat` mellé, és várd meg a letöltés végét.
+- **Megszakadt az előkészítés**: indítsd újra az `Indit.bat`-ot; a kész lépések kimaradnak.
+- **Nem tud letölteni**: az első alkalomhoz internet kell; ellenőrizd a kapcsolatot és indítsd újra.
 - **Nem indul a megjelenítés**: frissítsd a videokártya-illesztőt; Vulkan-támogatás szükséges.
-- **Első indítás lassú**: az adatok feldolgozása és a teljes fordítás egyszeri, hosszabb lépés. A részletes naplók az `output/.setup/logs/` mappába kerülnek.
+- **Naplók**: `inditas.log` és `output/.setup/logs/`. Hibajelentéshez a hiba szövegét és a megfelelő naplót add meg.
 
 ## Kiskína és a kutatási archívum
 
