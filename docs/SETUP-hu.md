@@ -1,7 +1,8 @@
-# Telepítés és első indítás részletesen (A Mesterlövész: Újratöltve)
+# Fejlesztői útmutató — fordítás forrásból
 
-Ez a leírás a [README](../README.md) lépéseit fejti ki. Ha csak játszani akarsz, a README elég; ide akkor érdemes jönni,
-ha valami elakad, vagy tudni akarod, mit csinál pontosan az `Indit.cmd`.
+**Ha játszani szeretnél, a [Windows játékoscsomag](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Mesterlovesz-Ujratoltve-Windows.zip) már elérhető. [Játékos útmutató: ZIP kibontása → ISO az Indit.bat mellé → dupla kattintás](PLAYER-hu.md). Rust és Python telepítése nem szükséges.**
+
+Az alábbi leírás kizárólag a forráskódból fordításhoz szól. Fejlesztőként Rust MSVC, C++ Build Tools és Python szükséges, és az Indit.cmd indítót használod.
 
 > A tároló **nem tartalmaz játékfájlt**. Szükséged van a magyar *A Mesterlövész* (*Sniper: Path of Vengeance*) Archive.org-on megőrzött
 > ISO-jára. A program az eredeti fájlokat csak olvassa.
