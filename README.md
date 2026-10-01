@@ -15,6 +15,16 @@ A 2002-es **A Mesterlövész** (*Sniper: Path of Vengeance*, magyar 2.33-as kiad
 
 A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabályokat követő Rust motor- és játékrendszer-újraírás; nem teljes, binárisan egyező C/C++ dekompiláció egyszerű átfordítása. A teljes képpontos és viselkedési azonosságot még nem igazoltuk. Az automata kampánybejárás eredményei a kutatási dokumentumokban olvashatók.
 
+## Képek a játékból
+
+### Prológus — az éjszakai város
+
+![A remake prológusának ködös, esős utcája](docs/images/prologus.png)
+
+### Kiskína — a kampányból kihagyott pálya
+
+![Kiskína utcája, a remake kutatási felvétele](docs/images/kiskina-street.jpg)
+
 ## Indítás Windows 10/11-en — három lépés
 
 **[Windows játékoscsomag letöltése (48 MB)](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.1/Mesterlovesz-Ujratoltve-Windows.zip)**
