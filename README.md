@@ -88,3 +88,5 @@ A statikus weboldal és a Kiskína médiaarchívuma [külön tárolóban](https:
 ## Megjegyzés
 
 Nem hivatalos rajongói projekt. Az eredeti játék és gyári anyagai a jogtulajdonosoké.
+
+A projektet teljes egészében LLM-ek készítették. A projekt saját kódja nem tartalmaz ember által írt kódot.
