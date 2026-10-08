@@ -109,6 +109,10 @@ impl Door {
     fn translation(&self)->Vec3 {let rotation=self.rotation();self.pivot-rotation*self.pivot+self.offset*self.fraction}
     /// Does the segment pass through the door's brush in its current pose? (NPC path links, cshell 0x1003ca80)
     pub fn crosses(&self,a:Vec3,b:Vec3)->bool {let delta=b-a;let length=delta.length();length>0.0 && self.ray(a,delta/length,0.0,length).is_some()}
+    pub(crate) fn blocks_use_ray(&self,origin:Vec3,surface:Vec3)->bool {
+        let delta=surface-origin;let range=delta.length();
+        self.solid && range>0.01 && self.ray(origin,delta/range,0.0,range).is_some_and(|hit|hit<range-0.5)
+    }
     pub fn pose(&self)->(Quat,Vec3) {(self.rotation(),self.translation())}
     /// Hinged door waiting to close by itself: `Czas_samozamkniecia` set (only zero / non-zero matters), more than 2.0 s since the last
     /// activation attempt, fully open (0x100019a0: the server then asks the client, which closes it once the player is 128 and every
@@ -244,6 +248,8 @@ fn connected_bounds(meshes:&[level_viewer::VisualMesh])->Vec<(Vec3,Vec3)> {
 }
 /// Reach of the use key (cshell 0x1005faa0 sends the eye and view; the server casts 128 units, object.lto 0x10011880).
 pub const USE_RANGE:f32=128.0;
+/// Small aim tolerance for use targets; actual reach and unobstructed visibility stay mandatory.
+pub const USE_AIM_PADDING:f32=8.0;
 /// `Od_gracza` (object.lto 0x100020c0..0x10002246): when a hinged door opens it picks the sign of `Obrot` from the activator's side so the leaf swings
 /// away from them. `p` is `Przesuniecie_osi`, `door` the object origin, `activator` the player (or the NPC / path-node point). The retail matrix is not
 /// orthonormal, so the decision line is skewed and uses `+P` (both quirks replicated; verified by running the original x87 code). True: `Obrot := -|Obrot|`.
@@ -267,8 +273,8 @@ pub fn ray_box(origin:Vec3,direction:Vec3,low:Vec3,high:Vec3,max:f32)->Option<f3
 }
 fn nearest_target(origin:Vec3,direction:Vec3,world:&retail_movement::CollisionWorld,doors:&[&Door])->Option<(f32,String,String,bool)> {
     doors.iter().filter(|door|door.usable).filter_map(|door| {
-        // The server use ray is a thin segment of exactly 128 units from the eye (object.lto 0x10011880, 0x10025438): no aim padding.
-        let (distance,component)=door.ray_component(origin,direction,0.0,USE_RANGE)?;
+        // Retail uses a thin 128-unit segment; allow a small aim miss at the real surface.
+        let (distance,component)=door.ray_component(origin,direction,USE_AIM_PADDING,USE_RANGE)?;
         let (low,high)=door.components[component];
         // Padding helps aim at small switches, but visibility is checked to
         // the real brush surface, so it cannot extend through an adjacent wall.
@@ -279,7 +285,7 @@ fn nearest_target(origin:Vec3,direction:Vec3,world:&retail_movement::CollisionWo
         if range>USE_RANGE {return None;}
         if range>0.01 {
             if world.raycast(native(origin),native(delta),range).is_some_and(|hit|hit.0<range-0.5) {return None;}
-            if doors.iter().any(|other|other.name!=door.name && other.solid && other.ray(origin,delta/range,0.0,range).is_some_and(|hit|hit<range-0.5)) {return None;}
+            if doors.iter().any(|other|other.name!=door.name && other.blocks_use_ray(origin,surface)) {return None;}
         }
         Some((distance,door.name.clone(),door.destination.clone(),door.is_open()))
     }).min_by(|a,b|a.0.total_cmp(&b.0))
@@ -554,6 +560,24 @@ pub fn npc_open(doors:Query<&Door>,roster:Res<crate::npcs::NpcRoster>,session:Re
         assert!(!grate.occludes_shots);
         assert!(grate.shot_hit(Vec3::Z*20.0,-Vec3::Z,100.0).is_none());
         assert!(grate.sweep(Vec3::Z*20.0,Vec3::ONE,-Vec3::Z*40.0).is_some());
+    }
+    #[test] fn use_aim_accepts_small_hand_movement_without_extending_reach() {
+        let door=Door::from_properties("switch","b_door",&serde_json::json!({}),Vec3::splat(-2.0),Vec3::splat(2.0));
+        let floor=retail_movement::CollisionWorld::from_obj("v -100 -100 -100\nv 100 -100 -100\nv 0 -100 100\nf 1 2 3").unwrap();
+        let origin=Vec3::new(7.0,0.0,100.0);
+        assert!(nearest_target(origin,-Vec3::Z,&floor,&[&door]).is_some(),"a five-unit aim miss should still use the switch");
+        assert!(nearest_target(Vec3::new(7.0,0.0,140.0),-Vec3::Z,&floor,&[&door]).is_none(),"the real surface stays outside use reach");
+        assert!(nearest_target(Vec3::new(20.0,0.0,100.0),-Vec3::Z,&floor,&[&door]).is_none(),"aim assistance remains small");
+        let wall=retail_movement::CollisionWorld::from_obj("v -100 -100 50\nv 100 -100 50\nv 100 100 50\nv -100 100 50\nf 1 2 3 4").unwrap();
+        assert!(nearest_target(origin,-Vec3::Z,&wall,&[&door]).is_none(),"aim assistance cannot use the switch behind a wall");
+    }
+    #[test] fn use_aim_cannot_activate_a_prop_behind_a_nonusable_solid_brush() {
+        let brush=Door::from_properties("glass","b_transparent",&serde_json::json!({"Solid":1}),Vec3::new(-100.0,-100.0,49.0),Vec3::new(100.0,100.0,51.0));
+        let floor=retail_movement::CollisionWorld::from_obj("v -100 -100 -100\nv 100 -100 -100\nv 0 -100 100\nf 1 2 3").unwrap();
+        let body=crate::models::PropBody {name:"lever".into(),center:Vec3::ZERO,half_size:Vec3::splat(2.0)};
+        let origin=Vec3::new(7.0,0.0,100.0);
+        assert!(crate::activation::prop_use_hit(origin,-Vec3::Z,&body,128.0,&floor,&[]).is_some());
+        assert!(crate::activation::prop_use_hit(origin,-Vec3::Z,&body,128.0,&floor,&[&brush]).is_none(),"a nonusable solid brush still blocks switch use");
     }
     #[test] fn exported_prison_exit_doors_are_usable_from_probe_poses() {
         let output=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output");

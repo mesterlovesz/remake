@@ -72,7 +72,7 @@ def build(source: Path, exe: Path, dependencies: Path, out: Path):
             digest.update(bytes.fromhex(sha(path)))
     dependencies_used = {p.name: sha(p) for p in [python_zip, *sorted((dependencies / 'wheels').glob('*.whl')),
                                                 dependencies / 'unshield-1.6.2-x64.7z']}
-    manifest = {'version': '0.1.0-player.2', 'package': digest.hexdigest(), 'engine_sha256': sha(exe),
+    manifest = {'version': '0.1.0-player.3', 'package': digest.hexdigest(), 'engine_sha256': sha(exe),
                 'engine_source_commit': subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip(),
                 'dependencies': dependencies_used}
     (internal / 'package.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
@@ -105,7 +105,7 @@ def build(source: Path, exe: Path, dependencies: Path, out: Path):
         'https://github.com/FFmpeg/FFmpeg/tree/n7.1 ; https://ffmpeg.org/legal.html\n'
         'Rust game dependencies: .player/licenses/rust/ contains original notices, READMEs and the license catalog.\n'
         'Unchanged corresponding Cargo source archives are available in Rust-dependency-sources.zip in the same release:\n'
-        'https://github.com/mesterlovesz/remake/releases/tag/v0.1.0-player.2\n'
+        'https://github.com/mesterlovesz/remake/releases/tag/v0.1.0-player.3\n'
         'The game and exporters are available at https://github.com/mesterlovesz/remake\n', encoding='utf-8')
     print(json.dumps(manifest, indent=2))
 

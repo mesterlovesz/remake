@@ -244,15 +244,29 @@ pub fn restore_aux(mut campaign:ResMut<crate::campaign::Campaign>,mut activation
     for (owner,kind,position) in aux.drops {drops.pending.push((owner,kind,Vec3::from_array(position)));}
 }
 
+pub(crate) fn prop_use_hit(origin:Vec3,direction:Vec3,body:&crate::models::PropBody,reach:f32,world:&retail_movement::CollisionWorld,doors:&[&crate::doors::Door])->Option<f32> {
+    let low=body.center-body.half_size;let high=body.center+body.half_size;
+    let pad=Vec3::splat(crate::doors::USE_AIM_PADDING);
+    let distance=crate::doors::ray_box(origin,direction,low-pad,high+pad,reach)?;
+    // Check the actual surface: aim assistance must not extend reach or go around walls.
+    let surface=(origin+direction*distance).clamp(low,high);let delta=surface-origin;let range=delta.length();
+    if range>reach.min(crate::doors::USE_RANGE) {return None;}
+    let native=|v:Vec3|retail_movement::Vec3::new(v.x,v.y,v.z);
+    if range>0.01 && world.raycast(native(origin),native(delta),range).is_some_and(|hit|hit.0<range-0.5) {return None;}
+    if doors.iter().any(|door|door.blocks_use_ray(origin,surface)) {return None;}
+    Some(distance)
+}
+
 /// E on an o_obiekt within 128 units of the eye (cshell.dll 0x1005faa0); doors
 /// and NPC talk are resolved first and consume the key.
 pub fn use_objects(mut activation:ResMut<Activation>,mut use_door:ResMut<crate::doors::DoorUse>,bodies:Query<&crate::models::PropBody>,camera:Single<&Transform,With<InspectionCamera>>,
-    walking:Res<Walking>,bind:crate::options::Bindings,session:Res<crate::settings::Session>,intro:Res<crate::opening::Opening>) {
+    walking:Res<Walking>,bind:crate::options::Bindings,session:Res<crate::settings::Session>,intro:Res<crate::opening::Opening>,doors:Query<&crate::doors::Door>) {
     if intro.active || session.paused || session.dialogue_active || use_door.target_name.is_some() {return;}
     let origin=camera.translation/SCALE;let direction=*camera.forward();
     let native=|v:Vec3|retail_movement::Vec3::new(v.x,v.y,v.z);
     let reach=walking.world.raycast(native(origin),native(direction),128.0).map_or(128.0,|(hit,_)|hit+1.0);
-    let target=bodies.iter().filter_map(|body|crate::doors::ray_box(origin,direction,body.center-body.half_size,body.center+body.half_size,reach).map(|d|(d,body)))
+    let doors=doors.iter().collect::<Vec<_>>();
+    let target=bodies.iter().filter_map(|body|prop_use_hit(origin,direction,body,reach,&walking.world,&doors).map(|d|(d,body)))
         .min_by(|a,b|a.0.total_cmp(&b.0)).map(|(_,body)|body.name.clone());
     let Some(name)=target.filter(|name|activation.usable(name)) else {return};
     if activation.transitions.contains_key(&name) {return;}
@@ -395,6 +409,16 @@ fn hash(step:u32,name:&str,k:usize)->f32 {
 
 #[cfg(test)] mod tests {
     use super::*;
+    #[test] fn use_aim_accepts_an_off_center_prop_switch_but_not_a_hidden_one() {
+        let body=crate::models::PropBody {name:"lever".into(),center:Vec3::ZERO,half_size:Vec3::splat(2.0)};
+        let floor=retail_movement::CollisionWorld::from_obj("v -100 -100 -100\nv 100 -100 -100\nv 0 -100 100\nf 1 2 3").unwrap();
+        let origin=Vec3::new(7.0,0.0,100.0);
+        assert!(prop_use_hit(origin,-Vec3::Z,&body,128.0,&floor,&[]).is_some(),"small switches should allow a five-unit aim miss");
+        assert!(prop_use_hit(Vec3::new(7.0,0.0,140.0),-Vec3::Z,&body,128.0,&floor,&[]).is_none());
+        assert!(prop_use_hit(Vec3::new(7.0,0.0,130.0),-Vec3::Z,&body,129.0,&floor,&[]).is_none(),"wall tolerance cannot extend the real 128-unit reach");
+        let wall=retail_movement::CollisionWorld::from_obj("v -100 -100 50\nv 100 -100 50\nv 100 100 50\nv -100 100 50\nf 1 2 3 4").unwrap();
+        assert!(prop_use_hit(origin,-Vec3::Z,&body,128.0,&wall,&[]).is_none());
+    }
     #[test] fn objects_txt_state_animations_are_found_by_model() {
         let catalog=object_definitions("object Wajcha2\n\nmodel models\\levelowe\\wajcha2.ltb\nanim0 zamkniety\nanim01 otwiera\nsound01 sounds\\lewelowe\\drzwi\\wajcha.wav\n// comment\nobject zarowka\nmodel models\\levelowe\\zarowka.ltb\nHP 99999999");
         let lever=&catalog["models/levelowe/wajcha2.ltb"];

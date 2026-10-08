@@ -4,7 +4,7 @@
 
 ## 1. Töltsd le és csomagold ki a játékoscsomagot
 
-[Mesterlövész Újratöltve — Windows ZIP](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.2/Mesterlovesz-Ujratoltve-Windows.zip)
+[Mesterlövész Újratöltve — Windows ZIP](https://github.com/mesterlovesz/remake/releases/latest/download/Mesterlovesz-Ujratoltve-Windows.zip)
 
 Jobb kattintás a ZIP-en → **Az összes kibontása**. Válassz például egy `D:\Mesterlovesz` mappát. A teljes csomagot bontsd ki; az indító mellett a `.player` mappára is szükség van.
 

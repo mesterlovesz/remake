@@ -18,6 +18,8 @@ A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabály
 
 ## Képek a játékból
 
+**Frissítés (2026-10-08):** az ajtók és kis kapcsolók enyhe célzási eltéréssel is használhatók. A hatótáv és a falak ellenőrzése megmaradt. [A változás részletei](docs/interaction-update.md).
+
 ### Prológus — az éjszakai város
 
 ![A remake prológusának ködös, esős utcája](docs/images/prologus.png)
@@ -28,7 +30,7 @@ A cél az eredeti működés 1:1-es reprodukálása. Ez a visszafejtett szabály
 
 ## Indítás Windows 10/11-en — három lépés
 
-**[Windows játékoscsomag letöltése (48 MB)](https://github.com/mesterlovesz/remake/releases/download/v0.1.0-player.2/Mesterlovesz-Ujratoltve-Windows.zip)**
+**[Windows játékoscsomag letöltése (48 MB)](https://github.com/mesterlovesz/remake/releases/latest/download/Mesterlovesz-Ujratoltve-Windows.zip)**
 
 1. **Csomagold ki a ZIP teljes tartalmát** egy írható mappába. Jobb kattintás → **Az összes kibontása**.
 2. A [weboldal Játékfájlok gombjával](https://sniper.gay/#inditas) töltsd le az Archive.org magyar ISO-ját, és **tedd az Indit.bat mellé**.
