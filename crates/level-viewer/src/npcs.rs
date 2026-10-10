@@ -642,6 +642,15 @@ fn paper_ground_position(world:&CollisionWorld,position:Vec3,half:Vec3)->Vec3 {
         .filter(|(_,normal)|normal.y>0.6)
         .map_or(position,|(distance,_)|Vec3::new(position.x,origin.y-distance+half.y+0.04,position.z))
 }
+fn settle_spawn(world:&CollisionWorld,actor:&mut Npc) {
+    if actor.definition_name=="gazeta" {actor.position=paper_ground_position(world,actor.position,actor.half_extents);}
+    // Retail 0x10043589 skips floor placement for static phases. Their authored
+    // origin anchors seated/exercise poses; raising by hull half-height floats them.
+    else if !has(actor.commands(),"static") {
+        actor.position=lift_interpenetrating_spawn(world,actor.position,actor.half_extents);
+        actor.position=snap_spawn(world,actor.position,actor.half_extents);
+    }
+}
 pub fn setup_world(mut commands:Commands,config:Res<crate::ViewerConfig>,assets:Res<AssetServer>,walking:Res<crate::Walking>,
     mut meshes:ResMut<Assets<Mesh>>,mut materials:ResMut<Assets<StandardMaterial>>,mut roster:ResMut<NpcRoster>) {
     // WorldGeometry entities were removed by the parent world setup.
@@ -701,10 +710,7 @@ fn spawn_npc(commands:&mut Commands,config:&crate::ViewerConfig,assets:&AssetSer
     let personal_face=ensure_umbrella_face(&config.output) && apply_umbrella_face(&config.world,&spawn.definition_name,&mut skins);
     let mut actor=Npc::from_spawn(spawn,definition.clone());actor.visible=!emitter;
     let initial=actor.begin_phase(&definition.default_phase,false,&roster.navigation).unwrap_or_default();
-    actor.position=if actor.definition_name=="gazeta" {paper_ground_position(world,actor.position,actor.half_extents)}
-        else{lift_interpenetrating_spawn(world,actor.position,actor.half_extents)};
-    // 0x10043589: an actor whose default phase is not `static` is put on the floor below it.
-    if actor.definition_name!="gazeta" && !has(actor.commands(),"static") {actor.position=snap_spawn(world,actor.position,actor.half_extents);}
+    settle_spawn(world,&mut actor);
     if !emitter {
         roster.pending_sounds.extend(phase_sounds(&initial,actor.position));
         roster.pending_commands.push((actor.name.clone(),initial));
