@@ -1291,6 +1291,43 @@ fn the_spawn_snap_drops_a_hovering_actor_onto_the_floor_but_leaves_big_drops_and
     assert_eq!(snap_spawn(&w,Vec3::new(10.0,400.0,0.0),half).y,400.0,"no floor within 256 units");
 }
 #[test]
+fn static_seated_spawn_keeps_its_authored_origin_while_walkers_are_settled() {
+    let w=world(false);
+    let mut seated=roster_with(character(&["ruchomy"],&[],phases(&[("idle",1.0,true,&[("static","")])]),None)).actors.remove(0);
+    seated.position=Vec3::new(10.0,3.0,0.0);
+    let authored=seated.position;
+    settle_spawn(&w,&mut seated);
+    assert_eq!(seated.position,authored,"a static pose's hull is not a standing-foot offset");
+    let mut walker=fixture().actors.remove(0);
+    walker.position=authored;
+    settle_spawn(&w,&mut walker);
+    assert!((walker.position.y-5.0).abs()<0.001,"walking actors still lift out of the floor and settle");
+    walker.position=Vec3::new(10.0,15.0,0.0);
+    settle_spawn(&w,&mut walker);
+    assert!((walker.position.y-5.0).abs()<0.001,"walking actors still snap small drops");
+}
+#[test]
+#[ignore="requires local original gameplay and collision exports"]
+fn prison_static_poses_keep_authored_positions() {
+    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output");
+    let data:Gameplay=serde_json::from_str(&std::fs::read_to_string(root.join("rh1-wiezienie2.gameplay.json")).unwrap()).unwrap();
+    let world=CollisionWorld::from_obj(&std::fs::read_to_string(root.join("rh1-wiezienie2.collision.obj")).unwrap()).unwrap();
+    let nav=data.navigation.indexed();let mut count=0;
+    for spawn in data.npcs.iter().filter(|s|s.definition_name.starts_with("wiezien")) {
+        let definition=Arc::new(data.characters[&spawn.definition_name].clone());
+        let mut actor=Npc::from_spawn(spawn.clone(),definition.clone());
+        actor.begin_phase(&definition.default_phase,false,&nav);
+        if !has(actor.commands(),"static") {continue;}
+        let authored=actor.position;
+        let wrong=lift_interpenetrating_spawn(&world,authored,actor.half_extents);
+        settle_spawn(&world,&mut actor);
+        println!("{} {}: authored Y {:.3}, former Y {:.3}, settled Y {:.3}",actor.name,actor.definition_name,authored.y,wrong.y,actor.position.y);
+        assert_eq!(actor.position,authored,"{} must preserve its seat/exercise placement",actor.definition_name);
+        count+=1;
+    }
+    assert_eq!(count,11);
+}
+#[test]
 fn every_armed_character_drops_its_weapons_on_death_unless_nie_zostawiaj_gana() {
     // Kill (cshell 0x10042ca0, 0x10042eec..0x10043085) throws the weapon objects (+0x208, and +0x20c when `socket_weapon1` names a second one, 0x10044e7a) into the
     // world whatever phase the character dies in; `nie_zostawiaj_gana` removes them instead. The remake used to drop only for phases with the unknown key `drop_weapon`.
