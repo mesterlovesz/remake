@@ -140,6 +140,8 @@ pub struct Npc {
     pub definition_name:String,
     /// Hull centre (native units): the floor position of the path node plus the half height while walking.
     pub position:Vec3,
+    /// Authored and former lifted static spawn: recognize that exact defect in old saves.
+    legacy_static_spawn:Option<(Vec3,Vec3)>,
     pub half_extents:Vec3,
     pub hp:f32,
     pub hostile:bool,
@@ -235,7 +237,7 @@ impl Npc {
         let forward=rotation*Vec3::Z;let yaw=ai::yaw_of(forward.x,forward.z);
         let clip=weapon_clip(&definition);
         let second=command_value(&definition.header,"socket_weapon1").is_some_and(|s|!s.is_empty());
-        Self {name:spawn.name,definition_name:spawn.definition_name,position:Vec3::from(spawn.pos),
+        Self {name:spawn.name,definition_name:spawn.definition_name,position:Vec3::from(spawn.pos),legacy_static_spawn:None,
             half_extents:Vec3::from(definition.collision_half_extents.unwrap_or(fallback)),
             hp:definition.hp.unwrap_or(0.0),hostile:definition.hostile,phase:String::new(),visible:true,hidden:false,
             rotation:Quat::from_rotation_y(yaw),
@@ -426,6 +428,11 @@ impl NpcRoster {
     pub fn restore_actor(&mut self,name:&str,position:Vec3,hp:f32,phase:&str,visible:bool) {
         if !self.actors.iter().any(|a|a.name==name) {if let Some(actor)=self.dormant.remove(name) {self.actors.push(actor);}}
         let Some(index)=self.actors.iter().position(|a|a.name==name) else {return};
+        let actor=&self.actors[index];
+        let alive=hp>=0.0 && (hp>0.0 || !actor.definition.hp.is_some_and(|h|h>0.0));
+        let position=if alive && actor.definition.phases.get(phase).is_some_and(|p|has(&p.commands,"static")) {
+            actor.legacy_static_spawn.filter(|(authored,lifted)|authored.distance_squared(*lifted)>0.01 && position.distance_squared(*lifted)<0.01).map_or(position,|(authored,_)|authored)
+        }else{position};
         let _=self.enter_phase(index,phase,false);
         let actor=&mut self.actors[index];
         actor.phase=phase.into();actor.position=position;actor.hp=hp;actor.visible=visible;
@@ -650,6 +657,7 @@ fn settle_spawn(world:&CollisionWorld,actor:&mut Npc) {
         actor.position=lift_interpenetrating_spawn(world,actor.position,actor.half_extents);
         actor.position=snap_spawn(world,actor.position,actor.half_extents);
     }
+    else {actor.legacy_static_spawn=Some((actor.position,lift_interpenetrating_spawn(world,actor.position,actor.half_extents)));}
 }
 pub fn setup_world(mut commands:Commands,config:Res<crate::ViewerConfig>,assets:Res<AssetServer>,walking:Res<crate::Walking>,
     mut meshes:ResMut<Assets<Mesh>>,mut materials:ResMut<Assets<StandardMaterial>>,mut roster:ResMut<NpcRoster>) {
