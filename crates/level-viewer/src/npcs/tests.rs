@@ -860,6 +860,26 @@ fn the_snapshot_restore_keeps_hp_dead_and_phase() {
     roster.restore_actor("o_postac1",Vec3::new(1.0,5.1,2.0),7.0,"idle",true);assert!(!roster.actors[0].dead && roster.actors[0].phase=="idle","the saved hit points decide");
 }
 #[test]
+fn old_static_spawn_saves_are_repaired_without_changing_moved_or_dead_actors() {
+    let mut roster=roster_with(character(&[],&[],phases(&[("idle",1.0,true,&[("static","")]),("standing",1.0,true,&[])]),None));
+    let authored=Vec3::new(0.0,3.0,20.0);let w=world(false);
+    roster.actors[0].position=authored;
+    let legacy=lift_interpenetrating_spawn(&w,authored,roster.actors[0].half_extents);
+    assert!(legacy.y>authored.y);
+    settle_spawn(&w,&mut roster.actors[0]);
+    roster.restore_actor("o_postac1",legacy,75.0,"idle",true);
+    assert_eq!(roster.actors[0].position,authored,"repair the exact former spawn correction in an old save");
+    let moved=legacy+Vec3::X*10.0;
+    roster.restore_actor("o_postac1",moved,75.0,"idle",true);
+    assert_eq!(roster.actors[0].position,moved,"preserve a deliberately relocated actor");
+    roster.restore_actor("o_postac1",legacy,75.0,"standing",true);
+    assert_eq!(roster.actors[0].position,legacy,"preserve a non-static saved phase");
+    roster.restore_actor("o_postac1",legacy,-1.0,"idle",true);
+    assert_eq!(roster.actors[0].position,legacy,"preserve a corpse position");
+    roster.restore_actor("o_postac1",authored,75.0,"idle",true);
+    assert_eq!(roster.actors[0].position,authored,"current saves are unchanged");
+}
+#[test]
 fn scripted_execution_shots_do_not_hit_the_player_off_axis() {
     let mut roster=fixture();roster.set_phase("guard","execution");
     sim(&mut roster,&world(false),Vec3::new(0.0,5.0,0.0),0.1);assert_eq!(roster.drain_damage(),0.0,"a guard without a weapon fires nothing");
